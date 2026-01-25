@@ -3,6 +3,7 @@ package org.evan.ai.audit.controller;
 import io.github.wimdeblauwe.htmx.spring.boot.mvc.HtmxResponse;
 import org.evan.ai.audit.model.AuditProcessResult;
 import org.evan.ai.audit.service.AuditProcessService;
+import org.evan.ai.audit.service.ExcelDocumentService;
 import org.evan.ai.audit.service.WordDocumentService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * Controller for handling audit document processing requests.
+ * Supports both Word (.docx) and Excel (.xlsx, .xls) documents.
  */
 @Controller
 public class AuditController {
@@ -29,11 +31,39 @@ public class AuditController {
 
     private final AuditProcessService auditProcessService;
     private final WordDocumentService wordDocumentService;
+    private final ExcelDocumentService excelDocumentService;
 
     public AuditController(AuditProcessService auditProcessService,
-                          WordDocumentService wordDocumentService) {
+                          WordDocumentService wordDocumentService,
+                          ExcelDocumentService excelDocumentService) {
         this.auditProcessService = auditProcessService;
         this.wordDocumentService = wordDocumentService;
+        this.excelDocumentService = excelDocumentService;
+    }
+
+    /**
+     * Check if file is a valid supported document (Word or Excel).
+     */
+    private boolean isValidDocument(MultipartFile file) {
+        return wordDocumentService.isValidWordDocument(file) ||
+               excelDocumentService.isValidExcelDocument(file);
+    }
+
+    /**
+     * Get the content type for the response based on file type.
+     */
+    private String getContentType(String fileName) {
+        if (fileName == null) {
+            return "application/octet-stream";
+        }
+        String lowerName = fileName.toLowerCase();
+        if (lowerName.endsWith(".xlsx")) {
+            return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        } else if (lowerName.endsWith(".xls")) {
+            return "application/vnd.ms-excel";
+        } else {
+            return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        }
     }
 
     /**
@@ -65,8 +95,8 @@ public class AuditController {
                     .build();
         }
 
-        if (!wordDocumentService.isValidWordDocument(file)) {
-            model.addAttribute("error", "Invalid file format. Please upload a .docx file.");
+        if (!isValidDocument(file)) {
+            model.addAttribute("error", "Invalid file format. Please upload a .docx, .xlsx, or .xls file.");
             return HtmxResponse.builder()
                     .view("fragments/result :: error")
                     .build();
@@ -109,9 +139,9 @@ public class AuditController {
         LOGGER.info("Processing document for download: {}", file.getOriginalFilename());
 
         try {
-            if (!wordDocumentService.isValidWordDocument(file)) {
+            if (!isValidDocument(file)) {
                 return ResponseEntity.badRequest()
-                        .body("Invalid file format. Please upload a .docx file.".getBytes());
+                        .body("Invalid file format. Please upload a .docx, .xlsx, or .xls file.".getBytes());
             }
 
             // Process and get the filled document
@@ -126,8 +156,7 @@ public class AuditController {
                     .replace("+", "%20");
 
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.parseMediaType(
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+            headers.setContentType(MediaType.parseMediaType(getContentType(originalFileName)));
             headers.setContentDispositionFormData("attachment", outputFileName);
             headers.set("Content-Disposition",
                     "attachment; filename=\"" + outputFileName + "\"; filename*=UTF-8''" + encodedFileName);
@@ -153,10 +182,10 @@ public class AuditController {
 
         LOGGER.info("API request to process document: {}", file.getOriginalFilename());
 
-        if (!wordDocumentService.isValidWordDocument(file)) {
+        if (!isValidDocument(file)) {
             return ResponseEntity.badRequest()
                     .body(AuditProcessResult.failure(file.getOriginalFilename(),
-                            "Invalid file format. Please upload a .docx file."));
+                            "Invalid file format. Please upload a .docx, .xlsx, or .xls file."));
         }
 
         AuditProcessResult result = auditProcessService.processDocument(file, skipExisting);

@@ -160,6 +160,100 @@
             </div>
         </div>
 
+        <!-- Knowledge Base Management Card -->
+        <div id="knowledgeBaseCard" class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <div class="flex items-center justify-between mb-4 cursor-pointer" onclick="toggleKnowledgeBasePanel()">
+                <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                    <svg class="w-6 h-6 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                    Knowledge Base
+                </h2>
+                <div class="flex items-center space-x-2">
+                    <span id="kbDocCount" class="text-sm text-gray-500">0 documents</span>
+                    <svg id="kbToggleIcon" class="w-5 h-5 text-gray-400 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <div id="knowledgeBasePanel" class="hidden">
+                <!-- Upload Documents Section -->
+                <div class="mb-6">
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">Upload Documents</h3>
+                    <div id="kbDropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-indigo-500 transition-colors cursor-pointer">
+                        <svg class="w-10 h-10 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                        <p class="text-sm text-gray-600">Drop files here or click to upload</p>
+                        <p class="text-xs text-gray-400 mt-1">Supports .docx, .pdf, .md, .txt files</p>
+                        <input type="file" id="kbFileInput" class="hidden" accept=".docx,.pdf,.md,.txt,.doc" multiple>
+                    </div>
+                    <div id="kbUploadProgress" class="hidden mt-3">
+                        <div class="flex items-center">
+                            <svg class="animate-spin w-4 h-4 mr-2 text-indigo-600" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            <span id="kbUploadStatus" class="text-sm text-gray-600">Uploading...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Documents List -->
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-medium text-gray-700">Documents in Knowledge Base</h3>
+                        <button onclick="refreshDocumentList()" class="text-sm text-indigo-600 hover:text-indigo-800">
+                            Refresh
+                        </button>
+                    </div>
+                    <div id="kbDocumentList" class="border rounded-lg divide-y max-h-48 overflow-y-auto">
+                        <div class="p-3 text-center text-gray-500 text-sm">No documents yet</div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center justify-between pt-4 border-t">
+                    <span id="kbTotalChunks" class="text-xs text-gray-500">0 total chunks</span>
+                    <button onclick="clearKnowledgeBase()" class="text-sm text-red-600 hover:text-red-800">
+                        Clear All
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Answer Logs Card -->
+        <div id="answerLogsCard" class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <div class="flex items-center justify-between mb-4 cursor-pointer" onclick="toggleAnswerLogsPanel()">
+                <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                    <svg class="w-6 h-6 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Answer Source Logs
+                </h2>
+                <div class="flex items-center space-x-2">
+                    <span id="logCount" class="text-sm text-gray-500">0 logs</span>
+                    <svg id="logsToggleIcon" class="w-5 h-5 text-gray-400 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <div id="answerLogsPanel" class="hidden">
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-sm text-gray-600">Track which knowledge base documents were used to answer each question.</p>
+                    <button onclick="refreshAnswerLogs()" class="text-sm text-indigo-600 hover:text-indigo-800">Refresh</button>
+                </div>
+                <div id="answerLogsList" class="border rounded-lg divide-y max-h-96 overflow-y-auto">
+                    <div class="p-3 text-center text-gray-500 text-sm">No answer logs yet</div>
+                </div>
+                <div class="flex justify-end mt-3">
+                    <button onclick="clearAnswerLogs()" class="text-sm text-red-600 hover:text-red-800">Clear Logs</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Main Card -->
         <div class="bg-white rounded-2xl shadow-xl p-8 mb-6 relative">
             <!-- Overlay when not authenticated -->
@@ -188,16 +282,16 @@
                         </div>
                         <div>
                             <p class="text-lg font-medium text-gray-700">
-                                Drag & drop your Word document here
+                                Drag & drop your audit document here
                             </p>
                             <p class="text-sm text-gray-500 mt-1">
-                                or click to browse (supports .docx files)
+                                or click to browse (supports .docx, .xlsx, .xls files)
                             </p>
                         </div>
                         <input type="file"
                                id="fileInput"
                                name="file"
-                               accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                               accept=".docx,.xlsx,.xls,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
                                class="hidden"
                                required />
                     </div>
@@ -272,7 +366,7 @@
             <div class="space-y-4 text-gray-600">
                 <div class="flex items-start space-x-3">
                     <span class="flex-shrink-0 w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-sm font-medium">1</span>
-                    <p>Upload a Word document (.docx) containing audit questions</p>
+                    <p>Upload a Word (.docx) or Excel (.xlsx, .xls) document containing audit questions</p>
                 </div>
                 <div class="flex items-start space-x-3">
                     <span class="flex-shrink-0 w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-sm font-medium">2</span>
@@ -553,13 +647,24 @@
                 // Get the blob from response
                 const blob = await response.blob();
 
-                // Get filename from Content-Disposition header
+                // Get filename from Content-Disposition header or generate from original
                 const contentDisposition = response.headers.get('Content-Disposition');
                 let downloadName = 'audit_answered.docx';
+
+                // First try to get from Content-Disposition header
                 if (contentDisposition) {
                     const matches = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
                     if (matches && matches[1]) {
                         downloadName = matches[1].replace(/['"]/g, '');
+                    }
+                } else {
+                    // Generate from original filename with _answered suffix
+                    const originalName = file.name;
+                    const dotIndex = originalName.lastIndexOf('.');
+                    if (dotIndex > 0) {
+                        downloadName = originalName.substring(0, dotIndex) + '_answered' + originalName.substring(dotIndex);
+                    } else {
+                        downloadName = originalName + '_answered';
                     }
                 }
 
@@ -705,7 +810,285 @@
         document.addEventListener('DOMContentLoaded', function() {
             checkAuthStatus();
             loadProxyInfo();
+            initKnowledgeBase();
+            loadAnswerLogs();
         });
+
+        // ==================== Knowledge Base Management ====================
+
+        function initKnowledgeBase() {
+            const dropZone = document.getElementById('kbDropZone');
+            const fileInput = document.getElementById('kbFileInput');
+
+            dropZone.addEventListener('click', () => fileInput.click());
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-indigo-500', 'bg-indigo-50');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    uploadKnowledgeBaseFiles(files);
+                }
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    uploadKnowledgeBaseFiles(e.target.files);
+                }
+            });
+
+            refreshDocumentList();
+        }
+
+        function toggleKnowledgeBasePanel() {
+            const panel = document.getElementById('knowledgeBasePanel');
+            const icon = document.getElementById('kbToggleIcon');
+            panel.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180');
+        }
+
+        async function uploadKnowledgeBaseFiles(files) {
+            const progressDiv = document.getElementById('kbUploadProgress');
+            const statusSpan = document.getElementById('kbUploadStatus');
+
+            progressDiv.classList.remove('hidden');
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                statusSpan.textContent = `Uploading ${file.name} (${i + 1}/${files.length})...`;
+
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    const response = await fetch('/api/knowledge-base/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        showMessage('success', `Uploaded ${file.name}: ${data.chunkCount} chunks created`);
+                    } else {
+                        showMessage('error', `Failed to upload ${file.name}: ${data.error}`);
+                    }
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    showMessage('error', `Failed to upload ${file.name}: ${error.message}`);
+                }
+            }
+
+            progressDiv.classList.add('hidden');
+            document.getElementById('kbFileInput').value = '';
+            refreshDocumentList();
+        }
+
+        async function refreshDocumentList() {
+            try {
+                const response = await fetch('/api/knowledge-base/documents');
+                const data = await response.json();
+
+                const listDiv = document.getElementById('kbDocumentList');
+                const docCountSpan = document.getElementById('kbDocCount');
+                const chunksSpan = document.getElementById('kbTotalChunks');
+
+                docCountSpan.textContent = `${data.documentCount} document${data.documentCount !== 1 ? 's' : ''}`;
+                chunksSpan.textContent = `${data.totalChunks} total chunks`;
+
+                if (data.documents.length === 0) {
+                    listDiv.innerHTML = '<div class="p-3 text-center text-gray-500 text-sm">No documents yet</div>';
+                    return;
+                }
+
+                listDiv.innerHTML = data.documents.map(doc => `
+                    <div class="p-3 flex items-center justify-between hover:bg-gray-50">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-800 truncate">${escapeHtml(doc.fileName)}</p>
+                            <p class="text-xs text-gray-500">${doc.chunkCount} chunks • ${formatDate(doc.addedAt)}</p>
+                        </div>
+                        <button onclick="deleteDocument('${escapeHtml(doc.fileName)}')"
+                                class="ml-2 text-red-500 hover:text-red-700 p-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to load documents:', error);
+            }
+        }
+
+        async function deleteDocument(fileName) {
+            if (!confirm(`Delete "${fileName}" from the knowledge base?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/knowledge-base/documents/${encodeURIComponent(fileName)}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('success', data.message);
+                    refreshDocumentList();
+                } else {
+                    showMessage('error', data.error || 'Failed to delete document');
+                }
+            } catch (error) {
+                console.error('Failed to delete document:', error);
+                showMessage('error', 'Failed to delete document: ' + error.message);
+            }
+        }
+
+        async function clearKnowledgeBase() {
+            if (!confirm('Are you sure you want to clear all documents from the knowledge base? This cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/knowledge-base/documents', {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('success', data.message);
+                    refreshDocumentList();
+                } else {
+                    showMessage('error', data.error || 'Failed to clear knowledge base');
+                }
+            } catch (error) {
+                console.error('Failed to clear knowledge base:', error);
+                showMessage('error', 'Failed to clear knowledge base: ' + error.message);
+            }
+        }
+
+        // ==================== Answer Logs ====================
+
+        function toggleAnswerLogsPanel() {
+            const panel = document.getElementById('answerLogsPanel');
+            const icon = document.getElementById('logsToggleIcon');
+            panel.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180');
+        }
+
+        async function loadAnswerLogs() {
+            await refreshAnswerLogs();
+        }
+
+        async function refreshAnswerLogs() {
+            try {
+                const response = await fetch('/api/knowledge-base/logs?limit=50');
+                const data = await response.json();
+
+                const listDiv = document.getElementById('answerLogsList');
+                const countSpan = document.getElementById('logCount');
+
+                countSpan.textContent = `${data.count} log${data.count !== 1 ? 's' : ''}`;
+
+                if (data.logs.length === 0) {
+                    listDiv.innerHTML = '<div class="p-3 text-center text-gray-500 text-sm">No answer logs yet</div>';
+                    return;
+                }
+
+                listDiv.innerHTML = data.logs.map((log, index) => `
+                    <div class="p-3 hover:bg-gray-50">
+                        <div class="flex items-start justify-between cursor-pointer" onclick="toggleLogDetail(${index})">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-800 truncate">${escapeHtml(truncate(log.question, 80))}</p>
+                                <p class="text-xs text-gray-500">${log.sourceReferences.length} sources • ${formatDate(log.timestamp)}</p>
+                            </div>
+                            <svg class="w-4 h-4 text-gray-400 ml-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                        <div id="logDetail${index}" class="hidden mt-3 pl-4 border-l-2 border-indigo-200">
+                            <div class="mb-2">
+                                <p class="text-xs font-medium text-gray-600">Answer:</p>
+                                <p class="text-sm text-gray-700">${escapeHtml(truncate(log.answer, 300))}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-medium text-gray-600 mb-1">Source References:</p>
+                                ${log.sourceReferences.length > 0 ? log.sourceReferences.map(ref => `
+                                    <div class="bg-gray-50 rounded p-2 mb-1 text-xs">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="font-medium text-indigo-600">${escapeHtml(ref.fileName || ref.source || 'Unknown')}</span>
+                                            <span class="text-green-600">${ref.similarityPercentage || (ref.similarityScore * 100).toFixed(1) + '%'}</span>
+                                        </div>
+                                        <p class="text-gray-600 line-clamp-2">${escapeHtml(ref.contentExcerpt || '')}</p>
+                                    </div>
+                                `).join('') : '<p class="text-gray-500 text-xs">No sources found</p>'}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to load answer logs:', error);
+            }
+        }
+
+        function toggleLogDetail(index) {
+            const detail = document.getElementById(`logDetail${index}`);
+            detail.classList.toggle('hidden');
+        }
+
+        async function clearAnswerLogs() {
+            if (!confirm('Clear all answer logs?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/knowledge-base/logs', {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('success', data.message);
+                    refreshAnswerLogs();
+                } else {
+                    showMessage('error', data.error || 'Failed to clear logs');
+                }
+            } catch (error) {
+                console.error('Failed to clear logs:', error);
+                showMessage('error', 'Failed to clear logs: ' + error.message);
+            }
+        }
+
+        // ==================== Utility Functions ====================
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function truncate(text, maxLength) {
+            if (!text) return '';
+            return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return 'Unknown';
+            try {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            } catch (e) {
+                return dateStr;
+            }
+        }
     </script>
 </body>
 </html>

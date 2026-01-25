@@ -57,7 +57,12 @@ copilot:
 # Audit Assistant Configuration
 audit:
   knowledge-base:
-    # Path to knowledge base documents (supports classpath: or file: prefix)
+    # Path to store vector embeddings as JSON file
+    storage-path: ./data/vectorstore.json
+    # Path to store uploaded original documents
+    uploads-dir: ./data/uploads
+    # Legacy: Path to knowledge base documents (supports classpath: or file: prefix)
+    # These will be loaded only if the vector store is empty
     documents:
       - classpath:knowledge-base/audit-guidelines.md
       - classpath:knowledge-base/compliance-rules.md

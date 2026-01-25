@@ -1,21 +1,28 @@
 package org.evan.ai.audit.service.impl;
 
 import org.evan.ai.audit.config.KnowledgeBaseConfig;
+import org.evan.ai.audit.model.AnswerSourceLog;
 import org.evan.ai.audit.model.AuditQuestion;
 import org.evan.ai.audit.service.AuditAnswerService;
+import org.evan.ai.audit.service.KnowledgeBaseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
  * Implementation of AuditAnswerService using Spring AI with RAG.
+ * Now includes source tracking for answer traceability.
  */
 @Service
 public class AuditAnswerServiceImpl implements AuditAnswerService {
@@ -23,7 +30,9 @@ public class AuditAnswerServiceImpl implements AuditAnswerService {
     private static final Logger LOGGER = LoggerFactory.getLogger(AuditAnswerServiceImpl.class);
 
     private final ChatClient chatClient;
+    private final VectorStore vectorStore;
     private final KnowledgeBaseConfig.KnowledgeBaseLoader knowledgeBaseLoader;
+    private final KnowledgeBaseService knowledgeBaseService;
 
     private static final String SYSTEM_PROMPT = """
         You are an expert audit assistant. Your role is to answer audit-related questions 
@@ -47,8 +56,11 @@ public class AuditAnswerServiceImpl implements AuditAnswerService {
         """;
 
     public AuditAnswerServiceImpl(ChatClient.Builder chatClientBuilder, VectorStore vectorStore,
-                                   KnowledgeBaseConfig.KnowledgeBaseLoader knowledgeBaseLoader) {
+                                   KnowledgeBaseConfig.KnowledgeBaseLoader knowledgeBaseLoader,
+                                   KnowledgeBaseService knowledgeBaseService) {
+        this.vectorStore = vectorStore;
         this.knowledgeBaseLoader = knowledgeBaseLoader;
+        this.knowledgeBaseService = knowledgeBaseService;
         this.chatClient = chatClientBuilder
                 .defaultAdvisors(
                         QuestionAnswerAdvisor.builder(vectorStore)
@@ -66,6 +78,15 @@ public class AuditAnswerServiceImpl implements AuditAnswerService {
         knowledgeBaseLoader.ensureLoaded();
 
         try {
+            // First, retrieve relevant documents for source tracking
+            List<Document> relevantDocs = vectorStore.similaritySearch(
+                    SearchRequest.builder()
+                            .query(question)
+                            .topK(5)
+                            .build()
+            );
+
+            // Generate answer
             String answer = chatClient.prompt()
                     .user(question)
                     .call()
@@ -73,6 +94,9 @@ public class AuditAnswerServiceImpl implements AuditAnswerService {
 
             // Clean any remaining Markdown formatting
             String cleanAnswer = cleanMarkdown(answer);
+
+            // Log the answer with source references
+            logAnswerWithSources(question, cleanAnswer, relevantDocs);
 
             LOGGER.debug("Generated answer: {}", cleanAnswer.substring(0, Math.min(100, cleanAnswer.length())));
             return cleanAnswer;
@@ -137,6 +161,62 @@ public class AuditAnswerServiceImpl implements AuditAnswerService {
         result = result.trim();
 
         return result;
+    }
+
+    /**
+     * Log an answer with its source references for traceability.
+     */
+    private void logAnswerWithSources(String question, String answer, List<Document> relevantDocs) {
+        try {
+            AnswerSourceLog log = new AnswerSourceLog(question, answer);
+            log.setId(UUID.randomUUID().toString());
+            log.setTimestamp(LocalDateTime.now());
+
+            for (Document doc : relevantDocs) {
+                AnswerSourceLog.SourceReference ref = new AnswerSourceLog.SourceReference();
+                ref.setDocumentId(doc.getId());
+
+                // Extract metadata
+                if (doc.getMetadata().containsKey("fileName")) {
+                    ref.setFileName(String.valueOf(doc.getMetadata().get("fileName")));
+                }
+                if (doc.getMetadata().containsKey("source")) {
+                    ref.setSource(String.valueOf(doc.getMetadata().get("source")));
+                }
+                if (doc.getMetadata().containsKey("similarity_score")) {
+                    Object score = doc.getMetadata().get("similarity_score");
+                    if (score instanceof Number) {
+                        ref.setSimilarityScore(((Number) score).doubleValue());
+                    }
+                }
+                if (doc.getMetadata().containsKey("lineNumber")) {
+                    Object lineNum = doc.getMetadata().get("lineNumber");
+                    if (lineNum instanceof Number) {
+                        ref.setLineNumber(((Number) lineNum).intValue());
+                    }
+                }
+                if (doc.getMetadata().containsKey("addedAt")) {
+                    String addedAt = String.valueOf(doc.getMetadata().get("addedAt"));
+                    try {
+                        ref.setAddedAt(LocalDateTime.parse(addedAt));
+                    } catch (Exception ignored) {}
+                }
+
+                // Get content excerpt (first 200 chars)
+                String content = doc.getText();
+                if (content != null && content.length() > 200) {
+                    content = content.substring(0, 200) + "...";
+                }
+                ref.setContentExcerpt(content);
+
+                log.addSourceReference(ref);
+            }
+
+            knowledgeBaseService.recordAnswerLog(log);
+            LOGGER.debug("Logged answer with {} source references", relevantDocs.size());
+        } catch (Exception e) {
+            LOGGER.warn("Failed to log answer sources: {}", e.getMessage());
+        }
     }
 
     @Override

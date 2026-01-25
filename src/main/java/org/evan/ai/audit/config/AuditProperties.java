@@ -35,6 +35,8 @@ public class AuditProperties {
      */
     public static class KnowledgeBase {
         private List<String> documents = new ArrayList<>();
+        private String storagePath = "./data/vectorstore.json";
+        private String uploadsDir = "./data/uploads";
 
         public List<String> getDocuments() {
             return documents;
@@ -42,6 +44,22 @@ public class AuditProperties {
 
         public void setDocuments(List<String> documents) {
             this.documents = documents;
+        }
+
+        public String getStoragePath() {
+            return storagePath;
+        }
+
+        public void setStoragePath(String storagePath) {
+            this.storagePath = storagePath;
+        }
+
+        public String getUploadsDir() {
+            return uploadsDir;
+        }
+
+        public void setUploadsDir(String uploadsDir) {
+            this.uploadsDir = uploadsDir;
         }
     }
 

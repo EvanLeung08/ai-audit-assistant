@@ -35,6 +35,28 @@ Sample questions:
 - 公司的数据加密策略是什么？如何确保敏感数据的安全？
 - 访问控制机制是如何实施的？是否采用最小权限原则？
 
+### 4. audit_questionnaire_sample.xlsx (English - Excel Format)
+- **Format**: 3-column Excel spreadsheet (No., Question, Answer)
+- **Questions**: 10 IT Security audit questions
+- **Language**: English
+- **Use case**: Testing Excel document support
+
+To generate this file, run:
+```bash
+./mvnw test -Dtest=SampleExcelGeneratorTest
+```
+
+Sample questions:
+- What is the company's policy on data backup frequency?
+- How are access controls managed for sensitive systems?
+- What encryption standards are used for data at rest?
+
+## Supported File Formats
+
+The AI Audit Assistant supports:
+- **Word Documents**: `.docx` (table format or [Q]/[A] markers)
+- **Excel Spreadsheets**: `.xlsx`, `.xls` (column-based format)
+
 ## How to Test
 
 1. Start the application:
