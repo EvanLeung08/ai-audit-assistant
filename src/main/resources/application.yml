@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: evan-ai-audit-assistant
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      base-url: https://api.githubcopilot.com
+      chat:
+        options:
+          model: gpt-4o
+        completions-path: /chat/completions
+      embedding:
+        options:
+          model: text-embedding-3-small
+        embeddings-path: /embeddings
+
+# Audit Assistant Configuration
+audit:
+  knowledge-base:
+    # Path to knowledge base documents (supports classpath: or file: prefix)
+    documents:
+      - classpath:knowledge-base/audit-guidelines.md
+      - classpath:knowledge-base/compliance-rules.md
+      - classpath:knowledge-base/security-policies.md
+  document:
+    # Supported question markers in Word documents
+    question-markers:
+      - "[Q]"
+      - "[Question]"
+      - "问题："
+      - "Question:"
+    answer-markers:
+      - "[A]"
+      - "[Answer]"
+      - "答案："
+      - "Answer:"
+
+server:
+  port: 8080
+
+logging:
+  level:
+    org.evan.ai: DEBUG
+    org.springframework.ai: INFO

@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: evan-ai-audit-assistant-test
+  ai:
+    openai:
+      api-key: test-key
+      base-url: http://localhost:8080
+      chat:
+        options:
+          model: gpt-4o
+      embedding:
+        options:
+          model: text-embedding-3-small
+
+audit:
+  knowledge-base:
+    documents:
+      - classpath:knowledge-base/audit-guidelines.md
+  document:
+    question-markers:
+      - "[Q]"
+      - "[Question]"
+    answer-markers:
+      - "[A]"
+      - "[Answer]"
+
+logging:
+  level:
+    org.evan.ai: DEBUG
