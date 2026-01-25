@@ -1,6 +1,5 @@
 package org.evan.ai.audit.controller;
 
-import org.evan.ai.audit.model.CopilotToken;
 import org.evan.ai.audit.model.DeviceCodeResponse;
 import org.evan.ai.audit.model.DeviceTokenResponse;
 import org.evan.ai.audit.service.copilot.CopilotTokenService;
@@ -52,17 +51,13 @@ public class CopilotAuthController {
     public ResponseEntity<Map<String, Object>> getAuthStatus() {
         Map<String, Object> status = new HashMap<>();
 
-        boolean hasOAuthToken = copilotTokenService.hasOAuthToken();
+        boolean hasOAuthToken = copilotTokenService.isAuthenticated();
         status.put("authenticated", hasOAuthToken);
 
+        LOGGER.debug("Auth status check: authenticated={}", hasOAuthToken);
+
         if (hasOAuthToken) {
-            CopilotToken tokenInfo = copilotTokenService.getCachedTokenInfo();
-            if (tokenInfo != null) {
-                status.put("tokenExpired", tokenInfo.isExpired());
-                status.put("expiresAt", tokenInfo.getExpiresAt());
-            } else {
-                status.put("tokenCached", false);
-            }
+            status.put("tokenCached", true);
         }
 
         return ResponseEntity.ok(status);
@@ -94,8 +89,19 @@ public class CopilotAuthController {
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             LOGGER.error("Failed to start device authentication", e);
+
+            String errorMessage = e.getMessage();
+            // Check for network/DNS errors and provide helpful message
+            if (errorMessage != null && (errorMessage.contains("Failed to resolve") ||
+                    errorMessage.contains("UnknownHostException") ||
+                    errorMessage.contains("Network") ||
+                    errorMessage.contains("timeout") ||
+                    errorMessage.contains("Connection refused"))) {
+                errorMessage = "Cannot connect to GitHub. Please enable proxy settings if you are in a corporate network.";
+            }
+
             return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "Failed to start authentication: " + e.getMessage()));
+                    .body(Map.of("error", errorMessage));
         }
     }
 
@@ -189,7 +195,7 @@ public class CopilotAuthController {
      */
     @DeleteMapping("/token")
     public ResponseEntity<Map<String, Object>> clearTokens() {
-        copilotTokenService.clearTokens();
+        copilotTokenService.clearAuthentication();
         LOGGER.info("Tokens cleared");
 
         return ResponseEntity.ok(Map.of(
@@ -211,10 +217,6 @@ public class CopilotAuthController {
             result.put("message", "Token is valid");
             result.put("tokenPrefix", token.substring(0, Math.min(20, token.length())) + "...");
 
-            CopilotToken tokenInfo = copilotTokenService.getCachedTokenInfo();
-            if (tokenInfo != null) {
-                result.put("expiresAt", tokenInfo.getExpiresAt());
-            }
 
             return ResponseEntity.ok(result);
 

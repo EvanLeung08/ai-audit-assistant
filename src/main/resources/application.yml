@@ -60,6 +60,9 @@ copilot:
 
 # Audit Assistant Configuration
 audit:
+  # Enable multi-agent collaboration mode (default: false uses traditional service-based processing)
+  # When true, uses AI-powered document analysis with DocumentAnalyzerAgent, AnswerGeneratorAgent, and DocumentWriterAgent
+  use-agent-mode: true
   knowledge-base:
     # Path to store vector embeddings as JSON file
     storage-path: ./data/vectorstore.json

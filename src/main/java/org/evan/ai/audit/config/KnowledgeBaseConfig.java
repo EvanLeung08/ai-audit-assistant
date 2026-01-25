@@ -95,7 +95,7 @@ public class KnowledgeBaseConfig {
                 return;
             }
 
-            if (!copilotTokenService.hasOAuthToken()) {
+            if (!copilotTokenService.isAuthenticated()) {
                 throw new RuntimeException("Not authorized: Please complete GitHub Copilot authorization first");
             }
 

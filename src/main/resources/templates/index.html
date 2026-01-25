@@ -457,6 +457,30 @@
 
         async function startDeviceAuth() {
             const startAuthBtn = document.getElementById('startAuthBtn');
+
+            // Check if proxy is configured but not enabled
+            const proxyConfigSection = document.getElementById('proxyConfigSection');
+            const enableProxyCheckbox = document.getElementById('enableProxy');
+
+            // If proxy section is visible (meaning proxy is configured in server) but not enabled
+            if (proxyConfigSection && !proxyConfigSection.classList.contains('hidden') &&
+                enableProxyCheckbox && !enableProxyCheckbox.checked) {
+                // Show warning and highlight proxy section
+                const confirmProxy = confirm(
+                    'Proxy is configured on this server but not enabled.\n\n' +
+                    'If you are in a corporate network that requires a proxy to access GitHub, ' +
+                    'please enable the proxy first.\n\n' +
+                    'Click OK to proceed anyway, or Cancel to configure proxy first.'
+                );
+                if (!confirmProxy) {
+                    // Scroll to proxy section and expand it
+                    enableProxyCheckbox.checked = true;
+                    toggleProxy();
+                    proxyConfigSection.scrollIntoView({ behavior: 'smooth' });
+                    return;
+                }
+            }
+
             startAuthBtn.disabled = true;
             startAuthBtn.innerHTML = '<svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>Initializing...';
 
@@ -481,7 +505,28 @@
 
             } catch (error) {
                 console.error('Failed to start device auth:', error);
-                alert('Authorization initialization failed: ' + error.message);
+
+                // Check if this is a network/DNS error
+                let errorMessage = error.message || 'Unknown error';
+                if (errorMessage.includes('Failed to resolve') ||
+                    errorMessage.includes('Network') ||
+                    errorMessage.includes('fetch') ||
+                    errorMessage.includes('DNS') ||
+                    errorMessage.includes('ENOTFOUND') ||
+                    errorMessage.includes('timeout')) {
+                    errorMessage = 'Cannot connect to GitHub. If you are in a corporate network, please enable the proxy settings above and try again.';
+
+                    // Highlight proxy section
+                    const proxyConfigSection = document.getElementById('proxyConfigSection');
+                    if (proxyConfigSection) {
+                        proxyConfigSection.classList.add('ring-2', 'ring-red-400', 'ring-offset-2');
+                        setTimeout(() => {
+                            proxyConfigSection.classList.remove('ring-2', 'ring-red-400', 'ring-offset-2');
+                        }, 5000);
+                    }
+                }
+
+                showMessage('error', 'Authorization initialization failed: ' + errorMessage);
                 startAuthBtn.disabled = false;
                 startAuthBtn.innerHTML = '<svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>Authorize with GitHub';
             }
@@ -606,13 +651,22 @@
             // Check authentication first
             try {
                 const authResponse = await fetch('/api/auth/status');
+                if (!authResponse.ok) {
+                    console.error('Auth status check failed with status:', authResponse.status);
+                    showMessage('error', 'Unable to verify authorization status. Please refresh the page and try again.');
+                    return;
+                }
                 const authData = await authResponse.json();
+                console.log('Auth status:', authData);
                 if (!authData.authenticated) {
-                    showMessage('error', 'Please complete GitHub Copilot authorization first');
+                    showMessage('error', 'Please complete GitHub Copilot authorization first. Click the "Start Authorization" button above.');
+                    // Scroll to auth section
+                    document.getElementById('authSection')?.scrollIntoView({ behavior: 'smooth' });
                     return;
                 }
             } catch (error) {
-                showMessage('error', 'Unable to verify authorization status');
+                console.error('Auth status check error:', error);
+                showMessage('error', 'Unable to verify authorization status: ' + error.message);
                 return;
             }
 
@@ -687,12 +741,23 @@
 
                 showMessage('success', 'Document processed successfully! Download started.');
 
+                // Refresh auth status after successful processing
+                checkAuthStatus();
+
             } catch (error) {
                 console.error('Error:', error);
                 if (error.name === 'AbortError') {
                     showMessage('error', 'Request timed out. The document may have too many questions. Please try with a smaller document or try again later.');
                 } else {
-                    showMessage('error', 'Failed to process document: ' + error.message);
+                    // Check if this might be an auth issue
+                    if (error.message && (error.message.includes('Not authenticated') ||
+                                          error.message.includes('authorization') ||
+                                          error.message.includes('401'))) {
+                        showMessage('error', 'Session expired. Please re-authorize with GitHub Copilot.');
+                        checkAuthStatus(); // Refresh UI to show auth needed
+                    } else {
+                        showMessage('error', 'Failed to process document: ' + error.message);
+                    }
                 }
             } finally {
                 // Reset loading state
