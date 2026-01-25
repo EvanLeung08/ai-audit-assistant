@@ -1,0 +1,13 @@
+Body:
+{"model":"copilot-text-embedding-ada-002","input":["you are a great developer!","thanks for your help"]}
+req: map[
+Authorization:[Bearer tid=38a5c8942744b2c86026e97db7b1c278;exp=1743342360;sku=yearly_subscriber;proxy-ep=proxy.individual.githubcopilot.com;st=dotcom;chat=1;cit=1;malfil=1;editor_preview_features=1;ccr=1;rt=1;8kp=1;ip=43.239.85.11;asn=AS63888:c4163447f9a4626f9b5f6e38463cbd018ff84e208fe20a621fb3b1cd05636f03]
+Client-Version:[1.0.0]
+Content-Type:[application/json]
+User-Agent:[github.com/stong1994/github-copilot-api/1.0.0]
+copilot-integration-id:[vscode-chat]
+openai-intent:[conversation-panel]
+openai-organization:[github-copilot]
+vscode-machineid:[]
+vscode-sessionid:[731b4209-8f5d-4864-b56c-4bdf021fec011743340560435015]
+x-request-id:[5883a6a7-1995-4036-899d-b268ffbe2b26]]

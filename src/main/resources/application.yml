@@ -7,7 +7,9 @@ spring:
       max-request-size: 50MB
   ai:
     openai:
-      api-key: ${OPENAI_API_KEY}
+      # API key is dynamically set by CopilotTokenService when copilot.auth-mode=oauth
+      # Set this only when using copilot.auth-mode=env
+      api-key: ${OPENAI_API_KEY:placeholder}
       base-url: https://api.githubcopilot.com
       chat:
         options:
@@ -15,8 +17,34 @@ spring:
         completions-path: /chat/completions
       embedding:
         options:
-          model: text-embedding-3-small
+          model: copilot-text-embedding-ada-002
         embeddings-path: /embeddings
+
+# GitHub Copilot Authentication Configuration
+copilot:
+  # Authentication mode: "oauth" for GitHub Copilot OAuth flow (default), "env" for environment variable
+  auth-mode: oauth
+  github:
+    # GitHub OAuth App Client ID for device flow authentication
+    # Default is the official VS Code Copilot client ID
+    client-id: Iv1.b507a08c87ecfe98
+    # Optional: Set OAuth token directly (if already authenticated)
+    # oauth-token: ${GITHUB_OAUTH_TOKEN:}
+  api:
+    # Base URL for GitHub Copilot API
+    base-url: https://api.githubcopilot.com
+    # GitHub API URL for Copilot token exchange
+    token-url: https://api.github.com/copilot_internal/v2/token
+    # Copilot integration ID header value
+    integration-id: vscode-chat
+    # OpenAI organization header value
+    openai-organization: github-copilot
+    # OpenAI intent header value
+    openai-intent: conversation-panel
+    # User agent for API requests
+    user-agent: evan-ai-audit-assistant/1.0.0
+    # Client version header value
+    client-version: "1.0.0"
 
 # Audit Assistant Configuration
 audit:

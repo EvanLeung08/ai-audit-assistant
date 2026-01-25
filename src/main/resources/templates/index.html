@@ -46,8 +46,89 @@
             </p>
         </div>
 
+        <!-- GitHub Copilot Auth Card -->
+        <div id="authCard" class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                    <svg class="w-6 h-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                    </svg>
+                    GitHub Copilot 授权认证
+                </h2>
+                <div id="authStatus" class="flex items-center">
+                    <!-- Status will be updated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Not Authenticated View -->
+            <div id="notAuthenticatedView">
+                <p class="text-gray-600 mb-4">
+                    使用 AI 审计功能前，请先通过 GitHub 账号授权 Copilot 访问权限。
+                </p>
+                <button id="startAuthBtn"
+                        onclick="startDeviceAuth()"
+                        class="bg-gray-900 hover:bg-gray-800 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center">
+                    <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                    </svg>
+                    使用 GitHub 账号授权
+                </button>
+            </div>
+
+            <!-- Device Auth In Progress View -->
+            <div id="deviceAuthView" class="hidden">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <p class="text-blue-800 mb-2">请在新窗口中完成 GitHub 授权：</p>
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-white border-2 border-blue-400 rounded-lg px-4 py-2">
+                            <span class="text-2xl font-mono font-bold text-blue-600" id="userCodeDisplay">----</span>
+                        </div>
+                        <a id="verificationLink" href="#" target="_blank"
+                           class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                            打开 GitHub 授权页面
+                        </a>
+                    </div>
+                    <p class="text-sm text-blue-600 mt-2">
+                        点击上方按钮，在 GitHub 页面输入验证码完成授权
+                    </p>
+                </div>
+                <div class="flex items-center text-gray-600">
+                    <svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <span id="authPollingStatus">等待您在 GitHub 完成授权...</span>
+                </div>
+            </div>
+
+            <!-- Authenticated View -->
+            <div id="authenticatedView" class="hidden">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center text-green-600">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span class="font-medium">已授权，可以使用 AI 功能</span>
+                    </div>
+                    <button onclick="logout()"
+                            class="text-red-600 hover:text-red-800 text-sm font-medium">
+                        退出登录
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Main Card -->
-        <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
+        <div class="bg-white rounded-2xl shadow-xl p-8 mb-6 relative">
+            <!-- Overlay when not authenticated -->
+            <div id="authOverlay" class="absolute inset-0 bg-white bg-opacity-75 rounded-2xl flex items-center justify-center z-10">
+                <div class="text-center">
+                    <svg class="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                    <p class="text-gray-500">请先完成 GitHub Copilot 授权</p>
+                </div>
+            </div>
             <!-- Upload Form -->
             <form id="uploadForm"
                   class="space-y-6"
@@ -182,6 +263,143 @@
     </div>
 
     <script>
+        // ==================== GitHub Copilot Auth ====================
+        let deviceCode = null;
+        let pollingInterval = null;
+
+        // Check auth status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthStatus();
+        });
+
+        async function checkAuthStatus() {
+            try {
+                const response = await fetch('/api/auth/status');
+                const data = await response.json();
+                updateAuthUI(data.authenticated);
+            } catch (error) {
+                console.error('Failed to check auth status:', error);
+                updateAuthUI(false);
+            }
+        }
+
+        function updateAuthUI(isAuthenticated) {
+            const notAuthenticatedView = document.getElementById('notAuthenticatedView');
+            const deviceAuthView = document.getElementById('deviceAuthView');
+            const authenticatedView = document.getElementById('authenticatedView');
+            const authOverlay = document.getElementById('authOverlay');
+            const authStatus = document.getElementById('authStatus');
+            const startAuthBtn = document.getElementById('startAuthBtn');
+
+            // Stop any ongoing polling
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+            deviceCode = null;
+
+            if (isAuthenticated) {
+                notAuthenticatedView.classList.add('hidden');
+                deviceAuthView.classList.add('hidden');
+                authenticatedView.classList.remove('hidden');
+                authOverlay.classList.add('hidden');
+                authStatus.innerHTML = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">已授权</span>';
+            } else {
+                notAuthenticatedView.classList.remove('hidden');
+                deviceAuthView.classList.add('hidden');
+                authenticatedView.classList.add('hidden');
+                authOverlay.classList.remove('hidden');
+                authStatus.innerHTML = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">未授权</span>';
+
+                // Reset the auth button state
+                if (startAuthBtn) {
+                    startAuthBtn.disabled = false;
+                    startAuthBtn.innerHTML = '<svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>使用 GitHub 账号授权';
+                }
+            }
+        }
+
+        async function startDeviceAuth() {
+            const startAuthBtn = document.getElementById('startAuthBtn');
+            startAuthBtn.disabled = true;
+            startAuthBtn.innerHTML = '<svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>正在初始化...';
+
+            try {
+                const response = await fetch('/api/auth/device/start', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                deviceCode = data.deviceCode;
+
+                // Show device auth view
+                document.getElementById('notAuthenticatedView').classList.add('hidden');
+                document.getElementById('deviceAuthView').classList.remove('hidden');
+                document.getElementById('userCodeDisplay').textContent = data.userCode;
+                document.getElementById('verificationLink').href = data.verificationUri;
+
+                // Start polling
+                startPolling(data.interval || 5);
+
+            } catch (error) {
+                console.error('Failed to start device auth:', error);
+                alert('授权初始化失败: ' + error.message);
+                startAuthBtn.disabled = false;
+                startAuthBtn.innerHTML = '<svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>使用 GitHub 账号授权';
+            }
+        }
+
+        function startPolling(interval) {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+
+            pollingInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('/api/auth/device/poll', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ deviceCode: deviceCode })
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        clearInterval(pollingInterval);
+                        pollingInterval = null;
+                        updateAuthUI(true);
+                        if (data.warning) {
+                            showMessage('warning', '⚠️ ' + data.message);
+                        } else {
+                            showMessage('success', '🎉 ' + data.message);
+                        }
+                    } else if (data.slowDown) {
+                        // Increase interval
+                        clearInterval(pollingInterval);
+                        startPolling(interval + 5);
+                    } else if (data.error && !data.pending) {
+                        clearInterval(pollingInterval);
+                        pollingInterval = null;
+                        document.getElementById('authPollingStatus').textContent = '授权失败: ' + data.error;
+                    }
+                } catch (error) {
+                    console.error('Polling error:', error);
+                }
+            }, interval * 1000);
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/auth/token', { method: 'DELETE' });
+                updateAuthUI(false);
+                showMessage('success', '已退出登录');
+            } catch (error) {
+                console.error('Logout failed:', error);
+            }
+        }
+
+        // ==================== File Upload ====================
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
         const fileInfo = document.getElementById('fileInfo');
@@ -249,6 +467,19 @@
         uploadForm.addEventListener('submit', async function(e) {
             e.preventDefault();
 
+            // Check authentication first
+            try {
+                const authResponse = await fetch('/api/auth/status');
+                const authData = await authResponse.json();
+                if (!authData.authenticated) {
+                    showMessage('error', '请先完成 GitHub Copilot 授权认证');
+                    return;
+                }
+            } catch (error) {
+                showMessage('error', '无法验证授权状态');
+                return;
+            }
+
             const file = fileInput.files[0];
             if (!file) {
                 showMessage('error', 'Please select a file to upload.');
@@ -315,7 +546,14 @@
 
         function showMessage(type, message) {
             const results = document.getElementById('results');
-            const bgColor = type === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700';
+            let bgColor;
+            if (type === 'success') {
+                bgColor = 'bg-green-100 border-green-400 text-green-700';
+            } else if (type === 'warning') {
+                bgColor = 'bg-yellow-100 border-yellow-400 text-yellow-700';
+            } else {
+                bgColor = 'bg-red-100 border-red-400 text-red-700';
+            }
             results.innerHTML = `
                 <div class="p-4 rounded-lg border ${bgColor}">
                     ${message}
@@ -323,7 +561,7 @@
             `;
             setTimeout(() => {
                 results.innerHTML = '';
-            }, 5000);
+            }, type === 'warning' ? 10000 : 5000);
         }
     </script>
 </body>

@@ -21,15 +21,59 @@
 
 ## 快速开始
 
-### 1. 配置 API Key
+### 1. 配置认证方式
 
-编辑 `src/main/resources/application.yml`，配置你的 OpenAI API Key：
+本项目支持两种认证方式访问 AI API：
+
+#### 方式一：GitHub Copilot OAuth（推荐，默认）
+
+如果你有 GitHub Copilot 订阅，可以使用 GitHub OAuth 认证自动获取 API Token：
+
+1. **自动检测本地 Token**：如果你已经在 VS Code 中登录过 GitHub Copilot，系统会自动读取 `~/.config/github-copilot/hosts.json` 中的 OAuth Token。
+
+2. **设备流认证**：如果没有本地 Token，可以通过 API 进行设备流认证：
+   ```bash
+   # 启动设备认证流程
+   curl -X POST http://localhost:8080/api/auth/device/start
+   
+   # 返回类似：
+   # {
+   #   "userCode": "ABCD-1234",
+   #   "verificationUri": "https://github.com/login/device",
+   #   "deviceCode": "..."
+   # }
+   
+   # 访问 verificationUri 并输入 userCode 完成认证
+   # 然后轮询获取 Token：
+   curl -X POST http://localhost:8080/api/auth/device/poll \
+     -H "Content-Type: application/json" \
+     -d '{"deviceCode": "..."}'
+   ```
+
+3. **手动设置 OAuth Token**：
+   ```bash
+   curl -X POST http://localhost:8080/api/auth/token \
+     -H "Content-Type: application/json" \
+     -d '{"token": "YOUR_GITHUB_OAUTH_TOKEN"}'
+   ```
+
+4. **检查认证状态**：
+   ```bash
+   curl http://localhost:8080/api/auth/status
+   ```
+
+#### 方式二：传统 API Key
+
+编辑 `src/main/resources/application.yml`，切换到环境变量模式：
 
 ```yaml
+copilot:
+  auth-mode: env  # 切换为环境变量模式
+
 spring:
   ai:
     openai:
-      api-key: YOUR_API_KEY
+      api-key: ${OPENAI_API_KEY}
       base-url: https://api.openai.com/v1  # 或其他兼容的 API 端点
 ```
 
@@ -92,6 +136,55 @@ mvn spring-boot:run
 
 ## API 接口
 
+### 认证接口
+
+#### 检查认证状态
+```bash
+GET /api/auth/status
+
+Response: {"authenticated": true, "tokenExpired": false, "expiresAt": 1234567890}
+```
+
+#### 启动设备流认证
+```bash
+POST /api/auth/device/start
+
+Response: {
+  "deviceCode": "...",
+  "userCode": "ABCD-1234",
+  "verificationUri": "https://github.com/login/device",
+  "verificationUriComplete": "https://github.com/login/device?code=ABCD-1234",
+  "expiresIn": 900,
+  "interval": 5
+}
+```
+
+#### 轮询设备认证结果
+```bash
+POST /api/auth/device/poll
+Content-Type: application/json
+
+Body: {"deviceCode": "..."}
+
+Response: {"success": true, "message": "Authentication successful!"}
+# 或 {"success": false, "pending": true, "message": "Waiting for user authorization..."}
+```
+
+#### 手动设置 OAuth Token
+```bash
+POST /api/auth/token
+Content-Type: application/json
+
+Body: {"token": "YOUR_GITHUB_OAUTH_TOKEN"}
+```
+
+#### 测试当前 Token
+```bash
+POST /api/auth/test
+
+Response: {"success": true, "message": "Token is valid", "tokenPrefix": "tid=...", "expiresAt": 1234567890}
+```
+
 ### 处理文档（获取结果统计）
 
 ```bash
@@ -123,18 +216,27 @@ evan-ai-audit-assistant/
 ├── src/main/java/org/evan/ai/audit/
 │   ├── AuditAssistantApplication.java    # 应用入口
 │   ├── config/
-│   │   └── KnowledgeBaseConfig.java      # 知识库配置
+│   │   ├── KnowledgeBaseConfig.java      # 知识库配置
+│   │   ├── CopilotProperties.java        # Copilot 配置属性
+│   │   └── CopilotOpenAiConfig.java      # Copilot OpenAI 客户端配置
 │   ├── controller/
-│   │   └── AuditController.java          # REST 控制器
+│   │   ├── AuditController.java          # REST 控制器
+│   │   └── CopilotAuthController.java    # GitHub 认证控制器
 │   ├── exception/
 │   │   └── GlobalExceptionHandler.java   # 全局异常处理
 │   ├── model/
 │   │   ├── AuditQuestion.java            # 问题模型
-│   │   └── AuditProcessResult.java       # 处理结果模型
+│   │   ├── AuditProcessResult.java       # 处理结果模型
+│   │   ├── CopilotToken.java             # Copilot Token 模型
+│   │   ├── DeviceCodeResponse.java       # 设备流响应模型
+│   │   └── DeviceTokenResponse.java      # Token 响应模型
 │   └── service/
 │       ├── AuditAnswerService.java       # AI 问答服务接口
 │       ├── AuditProcessService.java      # 处理服务接口
 │       ├── WordDocumentService.java      # 文档服务接口
+│       ├── copilot/
+│       │   ├── CopilotTokenService.java  # Copilot Token 管理
+│       │   └── GitHubDeviceAuthService.java # GitHub 设备流认证
 │       └── impl/
 │           ├── AuditAnswerServiceImpl.java
 │           ├── AuditProcessServiceImpl.java

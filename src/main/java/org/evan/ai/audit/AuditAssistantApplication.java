@@ -1,5 +1,7 @@
 package org.evan.ai.audit;
 
+import org.springframework.ai.model.openai.autoconfigure.OpenAiChatAutoConfiguration;
+import org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
@@ -11,7 +13,10 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
  * automatically answers them using RAG (Retrieval-Augmented Generation) from a knowledge base,
  * and returns the completed document.
  */
-@SpringBootApplication
+@SpringBootApplication(exclude = {
+        OpenAiChatAutoConfiguration.class,
+        OpenAiEmbeddingAutoConfiguration.class
+})
 @ConfigurationPropertiesScan
 public class AuditAssistantApplication {
 

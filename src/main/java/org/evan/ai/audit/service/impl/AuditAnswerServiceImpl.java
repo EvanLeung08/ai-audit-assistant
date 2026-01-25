@@ -1,5 +1,6 @@
 package org.evan.ai.audit.service.impl;
 
+import org.evan.ai.audit.config.KnowledgeBaseConfig;
 import org.evan.ai.audit.model.AuditQuestion;
 import org.evan.ai.audit.service.AuditAnswerService;
 import org.slf4j.Logger;
@@ -22,6 +23,7 @@ public class AuditAnswerServiceImpl implements AuditAnswerService {
     private static final Logger LOGGER = LoggerFactory.getLogger(AuditAnswerServiceImpl.class);
 
     private final ChatClient chatClient;
+    private final KnowledgeBaseConfig.KnowledgeBaseLoader knowledgeBaseLoader;
 
     private static final String SYSTEM_PROMPT = """
         You are an expert audit assistant. Your role is to answer audit-related questions 
@@ -44,7 +46,9 @@ public class AuditAnswerServiceImpl implements AuditAnswerService {
         Answer the following audit question in plain text format:
         """;
 
-    public AuditAnswerServiceImpl(ChatClient.Builder chatClientBuilder, VectorStore vectorStore) {
+    public AuditAnswerServiceImpl(ChatClient.Builder chatClientBuilder, VectorStore vectorStore,
+                                   KnowledgeBaseConfig.KnowledgeBaseLoader knowledgeBaseLoader) {
+        this.knowledgeBaseLoader = knowledgeBaseLoader;
         this.chatClient = chatClientBuilder
                 .defaultAdvisors(
                         QuestionAnswerAdvisor.builder(vectorStore)
@@ -57,6 +61,9 @@ public class AuditAnswerServiceImpl implements AuditAnswerService {
     @Override
     public String answerQuestion(String question) {
         LOGGER.debug("Answering question: {}", question.substring(0, Math.min(100, question.length())));
+
+        // Ensure knowledge base is loaded before answering
+        knowledgeBaseLoader.ensureLoaded();
 
         try {
             String answer = chatClient.prompt()
