@@ -141,11 +141,13 @@ public class AuditController {
         try {
             if (!isValidDocument(file)) {
                 return ResponseEntity.badRequest()
+                        .contentType(MediaType.TEXT_PLAIN)
                         .body("Invalid file format. Please upload a .docx, .xlsx, or .xls file.".getBytes());
             }
 
             // Process and get the filled document
             ByteArrayOutputStream outputStream = auditProcessService.processAndGetDocument(file, skipExisting);
+            byte[] documentBytes = outputStream.toByteArray();
 
             // Generate output filename
             String originalFileName = file.getOriginalFilename();
@@ -157,17 +159,57 @@ public class AuditController {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType(getContentType(originalFileName)));
+            headers.setContentLength(documentBytes.length);
             headers.setContentDispositionFormData("attachment", outputFileName);
             headers.set("Content-Disposition",
                     "attachment; filename=\"" + outputFileName + "\"; filename*=UTF-8''" + encodedFileName);
+            // Prevent caching
+            headers.setCacheControl("no-cache, no-store, must-revalidate");
+            headers.setPragma("no-cache");
+            headers.setExpires(0);
 
-            return new ResponseEntity<>(outputStream.toByteArray(), headers, HttpStatus.OK);
+            LOGGER.info("Returning document: {} ({} bytes)", outputFileName, documentBytes.length);
+            return new ResponseEntity<>(documentBytes, headers, HttpStatus.OK);
 
         } catch (Exception e) {
+            // Check if this is a client disconnect (can be safely ignored)
+            if (isClientDisconnectException(e)) {
+                LOGGER.warn("Client disconnected during processing: {}", file.getOriginalFilename());
+                return null;
+            }
             LOGGER.error("Error downloading processed document", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.TEXT_PLAIN)
                     .body(("Error processing document: " + e.getMessage()).getBytes());
         }
+    }
+
+    /**
+     * Check if exception is caused by client disconnect.
+     */
+    private boolean isClientDisconnectException(Throwable e) {
+        if (e == null) return false;
+
+        // Check exception class name
+        String className = e.getClass().getName();
+        if (className.contains("ClientAbortException") ||
+            className.contains("ClosedChannelException") ||
+            className.contains("AsyncRequestNotUsableException")) {
+            return true;
+        }
+
+        // Check exception message
+        String message = e.getMessage();
+        if (message != null && (message.contains("ClientAbortException") ||
+                                message.contains("ClosedChannelException") ||
+                                message.contains("Broken pipe") ||
+                                message.contains("Connection reset") ||
+                                message.contains("AsyncRequestNotUsableException"))) {
+            return true;
+        }
+
+        // Check cause recursively
+        return isClientDisconnectException(e.getCause());
     }
 
     /**

@@ -634,10 +634,17 @@
                 formData.append('file', file);
                 formData.append('skipExisting', document.getElementById('skipExisting').checked);
 
+                // Use AbortController for timeout (10 minutes for large documents)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minutes timeout
+
                 const response = await fetch('/download', {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    signal: controller.signal
                 });
+
+                clearTimeout(timeoutId);
 
                 if (!response.ok) {
                     const errorText = await response.text();
@@ -682,7 +689,11 @@
 
             } catch (error) {
                 console.error('Error:', error);
-                showMessage('error', 'Failed to process document: ' + error.message);
+                if (error.name === 'AbortError') {
+                    showMessage('error', 'Request timed out. The document may have too many questions. Please try with a smaller document or try again later.');
+                } else {
+                    showMessage('error', 'Failed to process document: ' + error.message);
+                }
             } finally {
                 // Reset loading state
                 submitBtn.disabled = false;

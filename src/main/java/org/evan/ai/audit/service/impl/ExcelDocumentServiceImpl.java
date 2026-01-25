@@ -14,6 +14,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -25,6 +26,20 @@ public class ExcelDocumentServiceImpl implements ExcelDocumentService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ExcelDocumentServiceImpl.class);
     private static final String[] SUPPORTED_EXTENSIONS = {".xlsx", ".xls"};
+
+    // Keywords to identify question columns in table headers
+    private static final List<String> QUESTION_COLUMN_KEYWORDS = Arrays.asList(
+            "question", "问题", "audit question", "审计问题", "inquiry", "query",
+            "control", "controls", "requirement", "requirements", "criteria",
+            "description", "描述", "item", "项目", "content", "内容", "details"
+    );
+
+    // Keywords to identify answer columns in table headers
+    private static final List<String> ANSWER_COLUMN_KEYWORDS = Arrays.asList(
+            "answer", "答案", "response", "回复", "finding", "findings", "发现",
+            "result", "results", "结果", "comment", "comments", "备注", "remark", "remarks",
+            "observation", "status", "状态", "evidence", "证据", "note", "notes"
+    );
 
     @Override
     public List<AuditQuestion> extractQuestions(MultipartFile file) {
@@ -43,33 +58,54 @@ public class ExcelDocumentServiceImpl implements ExcelDocumentService {
         try (Workbook workbook = createWorkbook(inputStream, fileName)) {
             Sheet sheet = workbook.getSheetAt(0);
 
-            // Find question and answer columns from header row
+            // Find question and answer columns from header row using flexible detection
             int questionCol = -1;
             int answerCol = -1;
+            boolean hasHeader = false;
             Row headerRow = sheet.getRow(0);
 
             if (headerRow != null) {
                 for (int i = 0; i < headerRow.getLastCellNum(); i++) {
                     Cell cell = headerRow.getCell(i);
                     if (cell != null) {
-                        String value = getCellStringValue(cell).toLowerCase();
-                        if (value.contains("question") || value.contains("问题")) {
+                        String value = getCellStringValue(cell).toLowerCase().trim();
+
+                        // Check for question column keywords
+                        if (questionCol == -1 && matchesKeywords(value, QUESTION_COLUMN_KEYWORDS)) {
                             questionCol = i;
-                        } else if (value.contains("answer") || value.contains("答案") || value.contains("response")) {
+                            hasHeader = true;
+                        }
+                        // Check for answer column keywords
+                        if (answerCol == -1 && matchesKeywords(value, ANSWER_COLUMN_KEYWORDS)) {
                             answerCol = i;
+                            hasHeader = true;
                         }
                     }
                 }
             }
 
-            // Default: first column is question, second is answer
+            // If no header detected, try to find the best columns
+            if (questionCol == -1) {
+                questionCol = findBestQuestionColumn(sheet);
+            }
+            if (answerCol == -1 && questionCol >= 0) {
+                // Default: next column after question, or last column
+                answerCol = questionCol + 1 < sheet.getRow(0).getLastCellNum() ?
+                            questionCol + 1 : (int) sheet.getRow(0).getLastCellNum() - 1;
+            }
+
+            // Final defaults
             if (questionCol == -1) questionCol = 0;
-            if (answerCol == -1) answerCol = 1;
+            if (answerCol == -1) answerCol = Math.min(1, (int) sheet.getRow(0).getLastCellNum() - 1);
 
-            LOGGER.info("Excel parsing - using column {} for questions, column {} for answers", questionCol, answerCol);
+            LOGGER.info("Excel parsing - questionCol={}, answerCol={}, hasHeader={}",
+                    questionCol, answerCol, hasHeader);
 
-            // Extract questions starting from row 1 (skip header)
-            for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+            // Determine starting row
+            int startRow = hasHeader ? 1 : 0;
+
+            // Extract questions
+            for (int rowIndex = startRow; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
                 Row row = sheet.getRow(rowIndex);
                 if (row == null) continue;
 
@@ -79,7 +115,8 @@ public class ExcelDocumentServiceImpl implements ExcelDocumentService {
                 String questionText = questionCell != null ? getCellStringValue(questionCell).trim() : "";
                 String answerText = answerCell != null ? getCellStringValue(answerCell).trim() : "";
 
-                if (!questionText.isEmpty()) {
+                // Skip empty or too short questions, and header-like rows
+                if (questionText.length() > 5 && !isHeaderText(questionText)) {
                     questions.add(new AuditQuestion(
                             questions.size() + 1,
                             questionText,
@@ -236,5 +273,68 @@ public class ExcelDocumentServiceImpl implements ExcelDocumentService {
             default:
                 return "";
         }
+    }
+
+    /**
+     * Checks if text matches any of the keywords.
+     */
+    private boolean matchesKeywords(String text, List<String> keywords) {
+        if (text == null || text.isEmpty()) return false;
+        String lowerText = text.toLowerCase();
+        return keywords.stream().anyMatch(keyword ->
+                lowerText.contains(keyword.toLowerCase()) ||
+                lowerText.equals(keyword.toLowerCase()));
+    }
+
+    /**
+     * Finds the best column to use as question column based on content analysis.
+     */
+    private int findBestQuestionColumn(Sheet sheet) {
+        int bestCol = 0;
+        int maxAvgLength = 0;
+
+        Row firstDataRow = sheet.getRow(1);
+        if (firstDataRow == null) firstDataRow = sheet.getRow(0);
+        if (firstDataRow == null) return 0;
+
+        for (int col = 0; col < firstDataRow.getLastCellNum(); col++) {
+            int totalLength = 0;
+            int count = 0;
+
+            // Sample first few rows to determine column with longest text
+            for (int row = 0; row <= Math.min(5, sheet.getLastRowNum()); row++) {
+                Row r = sheet.getRow(row);
+                if (r != null) {
+                    Cell cell = r.getCell(col);
+                    if (cell != null) {
+                        String text = getCellStringValue(cell);
+                        if (text != null && text.length() > 10) {
+                            totalLength += text.length();
+                            count++;
+                        }
+                    }
+                }
+            }
+
+            if (count > 0) {
+                int avgLength = totalLength / count;
+                if (avgLength > maxAvgLength) {
+                    maxAvgLength = avgLength;
+                    bestCol = col;
+                }
+            }
+        }
+
+        return bestCol;
+    }
+
+    /**
+     * Checks if text looks like a header.
+     */
+    private boolean isHeaderText(String text) {
+        if (text == null) return false;
+        String lower = text.toLowerCase().trim();
+        return matchesKeywords(lower, QUESTION_COLUMN_KEYWORDS) ||
+               matchesKeywords(lower, ANSWER_COLUMN_KEYWORDS);
     }
 }
