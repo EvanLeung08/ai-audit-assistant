@@ -5,6 +5,7 @@ import org.evan.ai.audit.model.DeviceCodeResponse;
 import org.evan.ai.audit.model.DeviceTokenResponse;
 import org.evan.ai.audit.service.copilot.CopilotTokenService;
 import org.evan.ai.audit.service.copilot.GitHubDeviceAuthService;
+import org.evan.ai.audit.service.copilot.ProxyService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 1. Initiate device flow authentication
  * 2. Poll for authentication status
  * 3. Check current authentication status
+ * 4. Manage proxy settings
  */
 @RestController
 @RequestMapping("/api/auth")
@@ -30,14 +32,17 @@ public class CopilotAuthController {
 
     private final GitHubDeviceAuthService deviceAuthService;
     private final CopilotTokenService copilotTokenService;
+    private final ProxyService proxyService;
 
     // Store pending device codes (in production, use Redis or similar)
     private final Map<String, DeviceCodeResponse> pendingDeviceCodes = new ConcurrentHashMap<>();
 
     public CopilotAuthController(GitHubDeviceAuthService deviceAuthService,
-                                  CopilotTokenService copilotTokenService) {
+                                  CopilotTokenService copilotTokenService,
+                                  ProxyService proxyService) {
         this.deviceAuthService = deviceAuthService;
         this.copilotTokenService = copilotTokenService;
+        this.proxyService = proxyService;
     }
 
     /**
@@ -123,13 +128,13 @@ public class CopilotAuthController {
                 try {
                     copilotTokenService.getCopilotToken();
                     result.put("success", true);
-                    result.put("message", "授权成功！已准备好使用 AI 功能。");
+                    result.put("message", "Authorization successful! Ready to use AI features.");
                     LOGGER.info("Device authentication completed successfully, Copilot token obtained");
                 } catch (Exception e) {
                     LOGGER.warn("OAuth token obtained but failed to get Copilot token: {}", e.getMessage());
                     result.put("success", true);
                     result.put("warning", true);
-                    result.put("message", "GitHub 授权成功，但获取 Copilot Token 失败（可能是网络问题）。将在使用时重试。");
+                    result.put("message", "GitHub authorization successful, but failed to get Copilot Token (may be a network issue). Will retry when needed.");
                 }
 
             } else if (tokenResponse.isPending()) {
@@ -220,5 +225,59 @@ public class CopilotAuthController {
                     "error", e.getMessage()
             ));
         }
+    }
+
+    // ==================== Proxy Management ====================
+
+    /**
+     * Get proxy configuration info.
+     */
+    @GetMapping("/proxy/info")
+    public ResponseEntity<Map<String, Object>> getProxyInfo() {
+        ProxyService.ProxyInfo info = proxyService.getProxyInfo();
+        Map<String, Object> result = new HashMap<>();
+        result.put("configured", proxyService.isProxyConfigured());
+        result.put("enabled", info.enabled());
+        result.put("host", info.host());
+        result.put("port", info.port());
+        result.put("hasCredentials", info.hasCredentials());
+        result.put("username", info.username());
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * Enable proxy with optional authentication.
+     */
+    @PostMapping("/proxy/enable")
+    public ResponseEntity<Map<String, Object>> enableProxy(@RequestBody Map<String, String> request) {
+        String username = request.get("username");
+        String password = request.get("password");
+
+        if (!proxyService.isProxyConfigured()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Proxy server not configured. Please configure proxy address in application.yml"));
+        }
+
+        proxyService.enableProxy(username, password);
+        LOGGER.info("Proxy enabled by user");
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Proxy enabled"
+        ));
+    }
+
+    /**
+     * Disable proxy.
+     */
+    @PostMapping("/proxy/disable")
+    public ResponseEntity<Map<String, Object>> disableProxy() {
+        proxyService.disableProxy();
+        LOGGER.info("Proxy disabled by user");
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Proxy disabled"
+        ));
     }
 }

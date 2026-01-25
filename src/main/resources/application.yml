@@ -45,6 +45,14 @@ copilot:
     user-agent: evan-ai-audit-assistant/1.0.0
     # Client version header value
     client-version: "1.0.0"
+  # Proxy configuration for accessing GitHub API
+  proxy:
+    # Proxy server host (e.g., proxy.company.com)
+    host: ${PROXY_HOST:proxy.company.com}
+    # Proxy server port (e.g., 8080)
+    port: ${PROXY_PORT:8080}
+    # Proxy type: HTTP or SOCKS (default: HTTP)
+    type: HTTP
 
 # Audit Assistant Configuration
 audit:

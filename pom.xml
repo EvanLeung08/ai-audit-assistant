@@ -99,6 +99,14 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Netty DNS Native for macOS (fixes DNS resolution issues) -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-resolver-dns-native-macos</artifactId>
+            <classifier>osx-aarch_64</classifier>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

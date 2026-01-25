@@ -27,20 +27,28 @@ public class CopilotTokenService {
 
     private final CopilotProperties copilotProperties;
     private final ObjectMapper objectMapper;
-    private final RestClient restClient;
+    private final ProxyService proxyService;
     private final ReentrantLock tokenLock = new ReentrantLock();
 
     private volatile String githubOAuthToken;
     private volatile CopilotToken cachedCopilotToken;
 
-    public CopilotTokenService(CopilotProperties copilotProperties, ObjectMapper objectMapper) {
+    public CopilotTokenService(CopilotProperties copilotProperties, ObjectMapper objectMapper,
+                               ProxyService proxyService) {
         this.copilotProperties = copilotProperties;
         this.objectMapper = objectMapper;
-        this.restClient = RestClient.builder()
-                .defaultHeader("Accept", "application/json")
-                .build();
+        this.proxyService = proxyService;
 
         LOGGER.info("CopilotTokenService initialized - waiting for user authentication");
+    }
+
+    /**
+     * Create a RestClient with current proxy configuration.
+     */
+    private RestClient createRestClient() {
+        return proxyService.createRestClientBuilder()
+                .defaultHeader("Accept", "application/json")
+                .build();
     }
 
     /**
@@ -98,7 +106,7 @@ public class CopilotTokenService {
 
             // Need to refresh the token
             if (githubOAuthToken == null || githubOAuthToken.isEmpty()) {
-                throw new RuntimeException("未授权：请先完成 GitHub Copilot 授权认证");
+                throw new RuntimeException("Not authorized: Please complete GitHub Copilot authorization first");
             }
 
             LOGGER.info("Refreshing Copilot token...");
@@ -119,7 +127,7 @@ public class CopilotTokenService {
         String userAgent = copilotProperties.getApi().getUserAgent();
 
         try {
-            String response = restClient.get()
+            String response = createRestClient().get()
                     .uri(tokenUrl)
                     .header("Authorization", "token " + oauthToken)
                     .header("User-Agent", userAgent)
@@ -129,7 +137,7 @@ public class CopilotTokenService {
             CopilotToken copilotToken = objectMapper.readValue(response, CopilotToken.class);
 
             if (copilotToken.getToken() == null || copilotToken.getToken().isEmpty()) {
-                throw new RuntimeException("无法获取 Copilot Token，请确保您的 GitHub 账号已订阅 GitHub Copilot");
+                throw new RuntimeException("Unable to obtain Copilot Token. Please ensure your GitHub account has an active GitHub Copilot subscription");
             }
 
             return copilotToken;
@@ -141,9 +149,9 @@ public class CopilotTokenService {
                     errorMsg.contains("Network is unreachable") ||
                     errorMsg.contains("Connection refused") ||
                     errorMsg.contains("Connection timed out"))) {
-                throw new RuntimeException("网络连接失败：无法访问 GitHub API。请检查网络连接或代理设置。", e);
+                throw new RuntimeException("Network connection failed: Unable to access GitHub API. Please check your network connection or proxy settings.", e);
             }
-            throw new RuntimeException("获取 Copilot Token 失败: " + errorMsg, e);
+            throw new RuntimeException("Failed to obtain Copilot Token: " + errorMsg, e);
         }
     }
 
@@ -168,4 +176,3 @@ public class CopilotTokenService {
         }
     }
 }
-

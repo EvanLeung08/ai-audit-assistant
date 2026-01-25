@@ -26,13 +26,21 @@ public class GitHubDeviceAuthService {
     private static final String DEFAULT_SCOPE = "read:user";
 
     private final CopilotProperties copilotProperties;
-    private final RestClient restClient;
+    private final ProxyService proxyService;
     private final ObjectMapper objectMapper;
 
-    public GitHubDeviceAuthService(CopilotProperties copilotProperties, ObjectMapper objectMapper) {
+    public GitHubDeviceAuthService(CopilotProperties copilotProperties, ObjectMapper objectMapper,
+                                   ProxyService proxyService) {
         this.copilotProperties = copilotProperties;
         this.objectMapper = objectMapper;
-        this.restClient = RestClient.builder()
+        this.proxyService = proxyService;
+    }
+
+    /**
+     * Create a RestClient with current proxy configuration.
+     */
+    private RestClient createRestClient() {
+        return proxyService.createRestClientBuilder()
                 .defaultHeader("Accept", "application/json")
                 .build();
     }
@@ -49,7 +57,7 @@ public class GitHubDeviceAuthService {
 
         String requestBody = "client_id=" + clientId + "&scope=" + DEFAULT_SCOPE;
 
-        String response = restClient.post()
+        String response = createRestClient().post()
                 .uri(GITHUB_DEVICE_CODE_URL)
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .body(requestBody)
@@ -83,7 +91,7 @@ public class GitHubDeviceAuthService {
                 "&device_code=" + deviceCode +
                 "&grant_type=urn:ietf:params:oauth:grant-type:device_code";
 
-        String response = restClient.post()
+        String response = createRestClient().post()
                 .uri(GITHUB_ACCESS_TOKEN_URL)
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .body(requestBody)
