@@ -1,151 +1,244 @@
 # AI Audit Assistant
 
-基于 Spring AI 和 RAG（检索增强生成）技术的智能审计问答系统。该系统可以自动处理包含审计问题的 Word 文档，利用知识库生成答案并填充到文档中。
+An intelligent audit questionnaire answering system based on Spring AI and RAG (Retrieval-Augmented Generation) technology, featuring a **Multi-Agent Collaboration Architecture**. The system automatically processes Word and Excel documents containing audit questions, retrieves relevant information from a knowledge base, and generates professional answers.
 
-## 功能特点
+## Features
 
-- 📄 **Word 文档解析**：支持 .docx 格式，自动识别表格和文本格式的问题
-- 🔍 **RAG 知识检索**：基于向量数据库的相似度搜索，从知识库中检索相关内容
-- 🤖 **AI 智能回答**：使用 GPT-4o 模型基于知识库内容生成专业答案
-- 📝 **自动填充答案**：将生成的答案写回到 Word 文档对应位置
-- 🌐 **友好的 Web 界面**：支持拖拽上传，实时处理反馈
+- 🤖 **Multi-Agent Collaboration Architecture**: Orchestrator, Document Analyzer, Answer Generator, and Document Writer agents work together for flexible and intelligent document processing
+- 📄 **Multi-Format Document Support**: Supports both `.docx` (Word) and `.xlsx` (Excel) formats for audit questionnaires
+- 🔍 **RAG Knowledge Retrieval**: Vector database-based similarity search to retrieve relevant content from the knowledge base
+- 📚 **Dynamic Knowledge Base Management**: Upload, delete, and manage knowledge base documents through a web interface
+- 💾 **Persistent Vector Store**: JSON-based persistent storage for document embeddings with source tracking
+- 📝 **Answer Source Tracing**: Track which knowledge base documents and excerpts were used to generate each answer
+- 🔐 **GitHub Copilot Integration**: OAuth device flow authentication to use GitHub Copilot API
+- 🌐 **Proxy Support**: Configure corporate proxy with authentication for accessing external APIs
+- 🍪 **Cookie-based Token Persistence**: Secure token storage in user cookies to avoid repeated authentication
+- 🌐 **User-Friendly Web Interface**: Drag-and-drop upload with real-time processing feedback
 
-## 技术栈
+## System Architecture
 
-- **后端框架**: Spring Boot 3.4.1
-- **AI 框架**: Spring AI 1.1.2
-- **向量存储**: SimpleVectorStore (内存)
-- **文档处理**: Apache POI 5.2.5
-- **前端**: Thymeleaf + HTMX + TailwindCSS
-- **Java 版本**: 21
+### Multi-Agent Collaboration Architecture
 
-## 快速开始
+The system uses a Supervisor pattern with four specialized agents:
 
-### 1. 配置认证方式
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   OrchestratorAgent                          │
+│             (Workflow Coordination & Task Routing)           │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+        ┌─────────────┼─────────────┬─────────────┐
+        ▼             ▼             ▼             ▼
+┌───────────────┐ ┌───────────────┐ ┌───────────────┐
+│ DocumentAna-  │ │ AnswerGene-   │ │ DocumentWri-  │
+│ lyzerAgent    │ │ ratorAgent    │ │ terAgent      │
+│ (AI-Powered   │ │ (RAG-Based    │ │ (Format       │
+│  Extraction)  │ │  Generation)  │ │  Preservation)│
+└───────────────┘ └───────────────┘ └───────────────┘
+```
 
-本项目支持两种认证方式访问 AI API：
+#### Agent Responsibilities
 
-#### 方式一：GitHub Copilot OAuth（推荐，默认）
+| Agent | Responsibility | Core Capabilities |
+|-------|----------------|-------------------|
+| **OrchestratorAgent** | Coordinate workflow | Task decomposition, agent routing, result aggregation |
+| **DocumentAnalyzerAgent** | Analyze documents using AI | Multi-strategy extraction, question identification with confidence scoring |
+| **AnswerGeneratorAgent** | Generate answers with RAG | Vector search, context retrieval, answer generation, source tracking |
+| **DocumentWriterAgent** | Write answers back | Format preservation for Word/Excel, cell/row mapping |
 
-如果你有 GitHub Copilot 订阅，可以使用 GitHub OAuth 认证自动获取 API Token：
+### Processing Flow
 
-1. **自动检测本地 Token**：如果你已经在 VS Code 中登录过 GitHub Copilot，系统会自动读取 `~/.config/github-copilot/hosts.json` 中的 OAuth Token。
+```
+User Upload → OrchestratorAgent
+                    │
+                    ▼
+         DocumentAnalyzerAgent
+         (AI analyzes: Is this a question?)
+                    │
+                    ▼
+         AnswerGeneratorAgent
+         (Vector search → RAG generation)
+                    │
+                    ▼
+         DocumentWriterAgent
+         (Fill answers, preserve format)
+                    │
+                    ▼
+              Download File
+```
 
-2. **设备流认证**：如果没有本地 Token，可以通过 API 进行设备流认证：
-   ```bash
-   # 启动设备认证流程
-   curl -X POST http://localhost:8080/api/auth/device/start
-   
-   # 返回类似：
-   # {
-   #   "userCode": "ABCD-1234",
-   #   "verificationUri": "https://github.com/login/device",
-   #   "deviceCode": "..."
-   # }
-   
-   # 访问 verificationUri 并输入 userCode 完成认证
-   # 然后轮询获取 Token：
-   curl -X POST http://localhost:8080/api/auth/device/poll \
-     -H "Content-Type: application/json" \
-     -d '{"deviceCode": "..."}'
-   ```
+## Tech Stack
 
-3. **手动设置 OAuth Token**：
-   ```bash
-   curl -X POST http://localhost:8080/api/auth/token \
-     -H "Content-Type: application/json" \
-     -d '{"token": "YOUR_GITHUB_OAUTH_TOKEN"}'
-   ```
+- **Backend Framework**: Spring Boot 3.4.1
+- **AI Framework**: Spring AI 1.1.2
+- **Vector Store**: Custom PersistentVectorStore (JSON-based)
+- **Document Processing**: Apache POI 5.2.5 (Word & Excel)
+- **Frontend**: Thymeleaf + HTMX + TailwindCSS
+- **Java Version**: 21
 
-4. **检查认证状态**：
-   ```bash
-   curl http://localhost:8080/api/auth/status
-   ```
+## Quick Start
 
-#### 方式二：传统 API Key
+### 1. Configure Authentication
 
-编辑 `src/main/resources/application.yml`，切换到环境变量模式：
+This project supports two authentication methods to access AI APIs:
+
+#### Method 1: GitHub Copilot OAuth (Recommended, Default)
+
+If you have a GitHub Copilot subscription, use GitHub OAuth to automatically obtain API tokens:
+
+1. Start the application and visit http://localhost:8080
+2. Click **"Authorize with GitHub"** on the authorization card
+3. Enter the displayed code on GitHub's device authorization page
+4. The system will automatically poll and complete the authentication
+
+The token is persisted in the user's cookies for automatic refresh and reuse.
+
+**Via API (optional):**
+```bash
+# Start device authentication flow
+curl -X POST http://localhost:8080/api/auth/device/start
+
+# Returns:
+# {
+#   "userCode": "ABCD-1234",
+#   "verificationUri": "https://github.com/login/device",
+#   "deviceCode": "..."
+# }
+
+# Visit verificationUri and enter userCode to complete authentication
+# Then poll to get token:
+curl -X POST http://localhost:8080/api/auth/device/poll \
+  -H "Content-Type: application/json" \
+  -d '{"deviceCode": "..."}'
+```
+
+#### Method 2: Traditional API Key
+
+Edit `src/main/resources/application.yml` to switch to environment variable mode:
 
 ```yaml
 copilot:
-  auth-mode: env  # 切换为环境变量模式
+  auth-mode: env  # Switch to environment variable mode
 
 spring:
   ai:
     openai:
       api-key: ${OPENAI_API_KEY}
-      base-url: https://api.openai.com/v1  # 或其他兼容的 API 端点
+      base-url: https://api.openai.com/v1  # Or other compatible API endpoints
 ```
 
-### 2. 添加知识库文档
+### 2. Configure Proxy (For Corporate Networks)
 
-将你的知识库文档放置在 `src/main/resources/knowledge-base/` 目录下。支持的格式：
-- Markdown (.md)
-- Text (.txt)
-- PDF (.pdf)
-- Word (.docx)
+If you need a proxy to access GitHub APIs:
 
-在 `application.yml` 中配置知识库路径：
+**Via Web Interface:**
+1. Enable the proxy checkbox in the authorization card
+2. Enter proxy server address and port
+3. Enter your corporate username/password if required
+4. Click "Save Proxy Settings"
+
+**Via Configuration File:**
+```yaml
+copilot:
+  proxy:
+    host: proxy.company.com
+    port: 8080
+    type: HTTP
+```
+
+### 3. Build Knowledge Base
+
+#### Via Web Interface (Recommended)
+
+1. Expand the **"Knowledge Base"** card on the main page
+2. Upload documents by dragging or clicking the upload area
+3. Supported formats: `.docx`, `.pdf`, `.md`, `.txt`
+4. Documents are automatically processed, split, and embedded
+5. View document list and delete documents as needed
+
+#### Via Configuration File (Legacy)
+
+Place documents in `src/main/resources/knowledge-base/` and configure:
 
 ```yaml
 audit:
   knowledge-base:
+    storage-path: ./data/vectorstore.json
+    uploads-dir: ./data/uploads
     documents:
       - classpath:knowledge-base/your-document.md
       - classpath:knowledge-base/another-document.pdf
 ```
 
-### 3. 运行项目
+### 4. Run the Project
 
 ```bash
 cd evan-ai-audit-assistant
+./start.sh
+# or
 mvn spring-boot:run
 ```
 
-访问 http://localhost:8080
+Visit http://localhost:8080
 
-## 支持的文档格式
+## Supported Document Formats
 
-### 表格格式（推荐）
+### Word Table Format (Recommended)
 
-| 序号 | 问题 | 答案 |
-|------|------|------|
-| 1 | 什么是内部审计的主要目标？ | （待填充） |
-| 2 | 如何确保审计独立性？ | （待填充） |
+| No. | Question | Answer |
+|-----|----------|--------|
+| 1 | What are the main objectives of internal audit? | (To be filled) |
+| 2 | How to ensure audit independence? | (To be filled) |
 
-或者两列格式：
+Or two-column format:
 
-| 问题 | 答案 |
-|------|------|
-| 问题内容... | （待填充） |
+| Question | Answer |
+|----------|--------|
+| Question content... | (To be filled) |
 
-### 文本格式
+### Excel Format
 
-使用标记符号：
+Upload `.xlsx` files with questions in rows. The system will:
+1. Detect question columns automatically using AI
+2. Find or create answer columns
+3. Output answered Excel file with the same format
+
+### Text Format (with Markers)
+
+Using markers:
 
 ```
-[Q] 什么是风险评估的基本步骤？
+[Q] What are the basic steps of risk assessment?
 [A] 
 
 [Question] How to ensure data security?
 [Answer] 
 
-问题：如何进行合规性检查？
-答案：
+Question: How to perform compliance checks?
+Answer:
 ```
 
-## API 接口
+## API Reference
 
-### 认证接口
+### Authentication Endpoints
 
-#### 检查认证状态
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/auth/status` | GET | Check authentication status |
+| `/api/auth/device/start` | POST | Start device flow authentication |
+| `/api/auth/device/poll` | POST | Poll device authentication result |
+| `/api/auth/logout` | POST | Clear all tokens and logout |
+| `/api/auth/token` | POST | Manually set OAuth token |
+| `/api/auth/test` | POST | Test current token validity |
+
+#### Check Authentication Status
 ```bash
 GET /api/auth/status
 
 Response: {"authenticated": true, "tokenExpired": false, "expiresAt": 1234567890}
 ```
 
-#### 启动设备流认证
+#### Start Device Flow Authentication
 ```bash
 POST /api/auth/device/start
 
@@ -159,7 +252,7 @@ Response: {
 }
 ```
 
-#### 轮询设备认证结果
+#### Poll Device Authentication Result
 ```bash
 POST /api/auth/device/poll
 Content-Type: application/json
@@ -167,102 +260,192 @@ Content-Type: application/json
 Body: {"deviceCode": "..."}
 
 Response: {"success": true, "message": "Authentication successful!"}
-# 或 {"success": false, "pending": true, "message": "Waiting for user authorization..."}
+# or {"success": false, "pending": true, "message": "Waiting for user authorization..."}
 ```
 
-#### 手动设置 OAuth Token
-```bash
-POST /api/auth/token
-Content-Type: application/json
+### Document Processing Endpoints
 
-Body: {"token": "YOUR_GITHUB_OAUTH_TOKEN"}
-```
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/audit/process` | POST | Process document and return statistics |
+| `/api/audit/download` | POST | Process and download filled document |
+| `/download` | POST | Download processed document (form submission) |
 
-#### 测试当前 Token
-```bash
-POST /api/auth/test
-
-Response: {"success": true, "message": "Token is valid", "tokenPrefix": "tid=...", "expiresAt": 1234567890}
-```
-
-### 处理文档（获取结果统计）
+#### Process Document (Get Statistics)
 
 ```bash
 POST /api/audit/process
 Content-Type: multipart/form-data
 
 Parameters:
-- file: Word 文档文件
-- skipExisting: 是否跳过已有答案的问题 (true/false)
+- file: Word or Excel document file
+- skipExisting: Skip questions with existing answers (true/false)
 ```
 
-### 处理并下载文档
+#### Process and Download Document
 
 ```bash
 POST /api/audit/download
 Content-Type: multipart/form-data
 
 Parameters:
-- file: Word 文档文件
-- skipExisting: 是否跳过已有答案的问题 (true/false)
+- file: Word or Excel document file
+- skipExisting: Skip questions with existing answers (true/false)
 
-Response: 填充答案后的 Word 文档
+Response: Filled document with answers
 ```
 
-## 项目结构
+### Knowledge Base Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/knowledge-base/upload` | POST | Upload document to knowledge base |
+| `/api/knowledge-base/documents` | GET | List all knowledge base documents |
+| `/api/knowledge-base/documents/{fileName}` | DELETE | Delete a document from knowledge base |
+| `/api/knowledge-base/stats` | GET | Get knowledge base statistics |
+| `/api/knowledge-base/answer-logs` | GET | Get answer source tracking logs |
+
+### Proxy Configuration Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/auth/proxy` | POST | Configure proxy settings |
+| `/api/auth/proxy/status` | GET | Get current proxy status |
+
+## Project Structure
 
 ```
 evan-ai-audit-assistant/
 ├── src/main/java/org/evan/ai/audit/
-│   ├── AuditAssistantApplication.java    # 应用入口
+│   ├── AuditAssistantApplication.java       # Application entry point
+│   ├── agent/                               # Multi-Agent Framework
+│   │   ├── AuditAgent.java                  # Agent interface
+│   │   ├── AgentContext.java                # Shared context between agents
+│   │   ├── AgentResult.java                 # Agent execution result
+│   │   └── impl/
+│   │       ├── OrchestratorAgent.java       # Workflow coordinator
+│   │       ├── DocumentAnalyzerAgent.java   # AI-powered document analysis
+│   │       ├── AnswerGeneratorAgent.java    # RAG-based answer generation
+│   │       └── DocumentWriterAgent.java     # Document output handler
 │   ├── config/
-│   │   ├── KnowledgeBaseConfig.java      # 知识库配置
-│   │   ├── CopilotProperties.java        # Copilot 配置属性
-│   │   └── CopilotOpenAiConfig.java      # Copilot OpenAI 客户端配置
+│   │   ├── AuditProperties.java             # Audit configuration properties
+│   │   ├── CopilotOpenAiConfig.java         # Dynamic token injection
+│   │   ├── CopilotProperties.java           # Copilot/proxy configuration
+│   │   └── KnowledgeBaseConfig.java         # Knowledge base setup
 │   ├── controller/
-│   │   ├── AuditController.java          # REST 控制器
-│   │   └── CopilotAuthController.java    # GitHub 认证控制器
+│   │   ├── AuditController.java             # Document processing endpoints
+│   │   ├── CopilotAuthController.java       # OAuth & proxy endpoints
+│   │   └── KnowledgeBaseController.java     # Knowledge base management
 │   ├── exception/
-│   │   └── GlobalExceptionHandler.java   # 全局异常处理
+│   │   └── GlobalExceptionHandler.java      # Global exception handling
 │   ├── model/
-│   │   ├── AuditQuestion.java            # 问题模型
-│   │   ├── AuditProcessResult.java       # 处理结果模型
-│   │   ├── CopilotToken.java             # Copilot Token 模型
-│   │   ├── DeviceCodeResponse.java       # 设备流响应模型
-│   │   └── DeviceTokenResponse.java      # Token 响应模型
-│   └── service/
-│       ├── AuditAnswerService.java       # AI 问答服务接口
-│       ├── AuditProcessService.java      # 处理服务接口
-│       ├── WordDocumentService.java      # 文档服务接口
-│       ├── copilot/
-│       │   ├── CopilotTokenService.java  # Copilot Token 管理
-│       │   └── GitHubDeviceAuthService.java # GitHub 设备流认证
-│       └── impl/
-│           ├── AuditAnswerServiceImpl.java
-│           ├── AuditProcessServiceImpl.java
-│           └── WordDocumentServiceImpl.java
+│   │   ├── AgentContext.java                # Context for agent communication
+│   │   ├── AgentResult.java                 # Agent operation result
+│   │   ├── AnswerSourceLog.java             # Source tracking model
+│   │   ├── AuditProcessResult.java          # Processing result
+│   │   ├── AuditQuestion.java               # Question model
+│   │   ├── CopilotToken.java                # Token model
+│   │   ├── DeviceCodeResponse.java          # Device flow response
+│   │   └── DeviceTokenResponse.java         # Token response
+│   ├── service/
+│   │   ├── AuditAnswerService.java          # Answer service interface
+│   │   ├── AuditProcessService.java         # Process service interface
+│   │   ├── ExcelDocumentService.java        # Excel handling interface
+│   │   ├── KnowledgeBaseService.java        # Knowledge base interface
+│   │   ├── WordDocumentService.java         # Word handling interface
+│   │   ├── copilot/
+│   │   │   ├── CopilotTokenService.java     # Token management with cookie support
+│   │   │   ├── GitHubDeviceAuthService.java # GitHub device flow
+│   │   │   ├── ProxyService.java            # Proxy configuration
+│   │   │   └── TokenCookieService.java      # Cookie persistence
+│   │   └── impl/
+│   │       ├── AgentBasedAuditProcessServiceImpl.java  # Agent-based processing
+│   │       ├── AuditAnswerServiceImpl.java
+│   │       ├── AuditProcessServiceImpl.java
+│   │       ├── ExcelDocumentServiceImpl.java
+│   │       ├── KnowledgeBaseServiceImpl.java
+│   │       └── WordDocumentServiceImpl.java
+│   ├── util/
+│   └── vectorstore/
+│       └── PersistentVectorStore.java       # JSON-based vector storage
 ├── src/main/resources/
-│   ├── application.yml                   # 应用配置
-│   ├── knowledge-base/                   # 知识库文档目录
+│   ├── application.yml                       # Application configuration
+│   ├── knowledge-base/                       # Default knowledge documents
 │   │   ├── audit-guidelines.md
 │   │   ├── compliance-rules.md
 │   │   └── security-policies.md
+│   ├── samples/                              # Sample documents
+│   │   ├── audit_questionnaire_sample.xlsx
+│   │   ├── audit_questionnaire_table.docx
+│   │   └── ...
 │   └── templates/
-│       ├── index.html                    # 主页面
-│       └── fragments/
-│           └── result.html               # 结果片段
+│       └── index.html                        # Main UI
+├── data/                                     # Runtime data
+│   ├── vectorstore.json                      # Persistent vector store
+│   └── uploads/                              # Uploaded documents
+├── doc/design/                               # Design documentation
+│   ├── architect.md                          # System architecture diagram
+│   ├── multi-agent diagram.md                # Multi-agent sequence diagram
+│   └── oAuth diagram.md                      # OAuth flow diagram
 └── pom.xml
 ```
 
-## 扩展知识库
+## Configuration Reference
 
-1. 将新的知识文档添加到 `src/main/resources/knowledge-base/` 目录
-2. 在 `application.yml` 中添加文档路径
-3. 重启应用程序
+### application.yml Main Configuration
 
-## 自定义问题标记
+```yaml
+# Copilot Authentication
+copilot:
+  auth-mode: oauth  # oauth or env
+  github:
+    client-id: Iv1.b507a08c87ecfe98
+  api:
+    base-url: https://api.githubcopilot.com
+  proxy:
+    host: proxy.company.com
+    port: 8080
+    type: HTTP
 
-在 `application.yml` 中配置自定义的问题/答案标记：
+# Audit Configuration
+audit:
+  # Enable multi-agent mode (recommended)
+  use-agent-mode: true
+  knowledge-base:
+    # Persistent vector store path
+    storage-path: ./data/vectorstore.json
+    # Uploaded documents storage
+    uploads-dir: ./data/uploads
+    documents:
+      - classpath:knowledge-base/audit-guidelines.md
+
+# Spring AI Configuration
+spring:
+  ai:
+    openai:
+      chat:
+        options:
+          model: gpt-4o
+      embedding:
+        options:
+          model: copilot-text-embedding-ada-002
+```
+
+## Extending Knowledge Base
+
+### Via Web Interface (Recommended)
+1. Expand the "Knowledge Base" card on the main page
+2. Drag and drop or click to upload new documents
+3. Documents are automatically processed and added to the vector store
+
+### Via Configuration File
+1. Add new knowledge documents to `src/main/resources/knowledge-base/` directory
+2. Add document paths in `application.yml`
+3. Restart the application
+
+## Custom Question Markers
+
+Configure custom question/answer markers in `application.yml`:
 
 ```yaml
 audit:
@@ -270,21 +453,40 @@ audit:
     question-markers:
       - "[Q]"
       - "[Question]"
-      - "问题："
+      - "Question:"
       - "Q:"
     answer-markers:
       - "[A]"
       - "[Answer]"
-      - "答案："
+      - "Answer:"
       - "A:"
 ```
 
-## 注意事项
+## Important Notes
 
-1. **文档大小限制**：默认最大上传文件大小为 50MB
-2. **处理时间**：处理时间取决于问题数量，每个问题大约需要 2-5 秒
-3. **答案标识**：AI 生成的答案将以蓝色字体显示，便于区分
-4. **知识库更新**：添加新知识库文档后需要重启应用
+1. **File Size Limit**: Default maximum upload size is 50MB
+2. **Processing Time**: Each question takes approximately 2-5 seconds
+3. **Answer Marking**: AI-generated answers are displayed in blue font for easy identification
+4. **Knowledge Base Updates**: Documents uploaded via web interface are immediately available
+5. **Token Persistence**: Tokens are stored in cookies; clearing cookies requires re-authentication
+6. **Agent Mode**: Set `audit.use-agent-mode: true` for AI-powered document analysis (recommended)
+7. **Proxy Authentication**: If your corporate proxy requires authentication, enter credentials in the web interface
+
+## Troubleshooting
+
+### DNS Resolution Failed
+If you see "Failed to resolve 'api.github.com'", enable proxy in the web interface and configure your corporate proxy settings.
+
+### Token Expired
+The system automatically refreshes tokens using the stored OAuth token. If issues persist, click "Sign Out" and re-authorize.
+
+### No Questions Found
+The AI-powered document analyzer uses multiple strategies:
+- Table extraction (prioritized)
+- Paragraph extraction with keyword detection
+- AI confidence scoring (threshold: 0.6)
+
+For flexible document formats, the analyzer adapts automatically.
 
 ## License
 
