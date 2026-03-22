@@ -1,9 +1,9 @@
 # AI Audit Assistant — Demo Presentation Script (English)
 
-## Project Overview
+## AI questionnaires Project Overview
 
-- **Goal:** Help the team automatically process audit questionnaires and quickly produce professional, traceable answers, saving time on manual organization and search.
-- **User Flow (one line):** Upload questionnaire → system identifies questions → retrieve relevant knowledge → generate answers → write answers back to document for download.
+- **Goal:** Help the team automatically process questionnaires and quickly produce professional, traceable answers, saving time on manual organization and search.
+- **User Flow (one line):** Upload questionnaire → AI Capabilities(system identifies questions → retrieve relevant knowledge → generate answers → write answers back to document for download).
 - **Key Roles (non-technical):**
   - **Orchestrator:** Assigns tasks and combines results.
   - **Document Analyzer:** Reads uploaded documents and finds the questions.
