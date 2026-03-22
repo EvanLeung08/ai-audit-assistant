@@ -1,11 +1,11 @@
-# AI Audit Assistant
+# AI Questionnaire Assistant
 
-An intelligent audit questionnaire answering system based on Spring AI and RAG (Retrieval-Augmented Generation) technology, featuring a **Multi-Agent Collaboration Architecture**. The system automatically processes Word and Excel documents containing audit questions, retrieves relevant information from a knowledge base, and generates professional answers.
+An intelligent questionnaire answering system based on Spring AI and RAG (Retrieval-Augmented Generation) technology, featuring a **Multi-Agent Collaboration Architecture**. The system automatically processes Word and Excel documents containing questionnaire questions, retrieves relevant information from a knowledge base, and generates professional answers.
 
 ## Features
 
 - 🤖 **Multi-Agent Collaboration Architecture**: Orchestrator, Document Analyzer, Answer Generator, and Document Writer agents work together for flexible and intelligent document processing
-- 📄 **Multi-Format Document Support**: Supports both `.docx` (Word) and `.xlsx` (Excel) formats for audit questionnaires
+- 📄 **Multi-Format Document Support**: Supports both `.docx` (Word) and `.xlsx` (Excel) formats for questionnaires
 - 🔍 **RAG Knowledge Retrieval**: Vector database-based similarity search to retrieve relevant content from the knowledge base
 - 📚 **Dynamic Knowledge Base Management**: Upload, delete, and manage knowledge base documents through a web interface
 - 💾 **Persistent Vector Store**: JSON-based persistent storage for document embeddings with source tracking
@@ -407,7 +407,7 @@ copilot:
     port: 8080
     type: HTTP
 
-# Audit Configuration
+# Questionnaire Configuration
 audit:
   # Enable multi-agent mode (recommended)
   use-agent-mode: true

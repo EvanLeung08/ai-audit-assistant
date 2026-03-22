@@ -1,12 +1,12 @@
-# Sample Audit Questionnaire Documents
+# Sample Questionnaire Documents
 
-This directory contains sample audit questionnaire documents for testing the AI Audit Assistant.
+This directory contains sample questionnaire documents for testing the AI Questionnaire Assistant.
 
 ## Available Test Documents
 
 ### 1. audit_questionnaire_table.docx (English - Table Format)
 - **Format**: 3-column table (No., Question, Answer)
-- **Questions**: 10 IT Security audit questions
+- **Questions**: 10 IT security questionnaire questions
 - **Language**: English
 - **Use case**: Testing table-based question extraction
 
@@ -17,7 +17,7 @@ Sample questions:
 
 ### 2. audit_questionnaire_text.docx (English - Text Marker Format)
 - **Format**: [Q]/[A] text markers
-- **Questions**: 5 Compliance audit questions
+- **Questions**: 5 compliance questionnaire questions
 - **Language**: English
 - **Use case**: Testing text marker-based question extraction
 
@@ -27,7 +27,7 @@ Sample questions:
 
 ### 3. audit_questionnaire_chinese.docx (Chinese - Table Format)
 - **Format**: 3-column table (序号, 审计问题, 答案/发现)
-- **Questions**: 10 信息安全审计问题
+- **Questions**: 10 信息安全问卷问题
 - **Language**: Chinese (中文)
 - **Use case**: Testing Chinese language support
 
@@ -37,7 +37,7 @@ Sample questions:
 
 ### 4. audit_questionnaire_sample.xlsx (English - Excel Format)
 - **Format**: 3-column Excel spreadsheet (No., Question, Answer)
-- **Questions**: 10 IT Security audit questions
+- **Questions**: 10 IT security questionnaire questions
 - **Language**: English
 - **Use case**: Testing Excel document support
 
@@ -53,7 +53,7 @@ Sample questions:
 
 ## Supported File Formats
 
-The AI Audit Assistant supports:
+The AI Questionnaire Assistant supports:
 - **Word Documents**: `.docx` (table format or [Q]/[A] markers)
 - **Excel Spreadsheets**: `.xlsx`, `.xls` (column-based format)
 
@@ -88,5 +88,4 @@ To regenerate the sample documents, run the test:
 After processing, each document should have:
 - All answer cells/sections filled with AI-generated content
 - Answers displayed in blue color to distinguish from original text
-- Content based on the knowledge base documents (audit-guidelines.md, compliance-rules.md, security-policies.md)
-
+- Content based on the knowledge base documents (`audit-guidelines.md`, `compliance-rules.md`, `security-policies.md`)

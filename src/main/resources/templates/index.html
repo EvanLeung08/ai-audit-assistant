@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Audit Assistant</title>
+    <title>AI Questionnaire Assistant</title>
     <script src="https://unpkg.com/htmx.org@1.9.12"
             integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
             crossorigin="anonymous"></script>
@@ -39,10 +39,10 @@
         <!-- Header -->
         <div class="text-center mb-10">
             <h1 class="text-4xl font-bold text-indigo-800 mb-2">
-                🔍 AI Audit Assistant
+                🔍 AI Questionnaire Assistant
             </h1>
             <p class="text-gray-600 text-lg">
-                Upload your audit questionnaire and let AI answer the questions automatically
+                Upload your questionnaire and let AI answer the questions automatically
             </p>
         </div>
 
@@ -63,7 +63,7 @@
             <!-- Not Authenticated View -->
             <div id="notAuthenticatedView">
                 <p class="text-gray-600 mb-4">
-                    Before using AI audit features, please authorize with your GitHub account for Copilot access.
+                    Before using AI questionnaire features, please authorize with your GitHub account for Copilot access.
                 </p>
                 <button id="startAuthBtn"
                         onclick="startDeviceAuth()"
@@ -282,7 +282,7 @@
                         </div>
                         <div>
                             <p class="text-lg font-medium text-gray-700">
-                                Drag & drop your audit document here
+                                Drag & drop your questionnaire document here
                             </p>
                             <p class="text-sm text-gray-500 mt-1">
                                 or click to browse (supports .docx, .xlsx, .xls files)
@@ -366,7 +366,7 @@
             <div class="space-y-4 text-gray-600">
                 <div class="flex items-start space-x-3">
                     <span class="flex-shrink-0 w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-sm font-medium">1</span>
-                    <p>Upload a Word (.docx) or Excel (.xlsx, .xls) document containing audit questions</p>
+                    <p>Upload a Word (.docx) or Excel (.xlsx, .xls) document containing questionnaire questions</p>
                 </div>
                 <div class="flex items-start space-x-3">
                     <span class="flex-shrink-0 w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-sm font-medium">2</span>
@@ -659,7 +659,7 @@
                 const authData = await authResponse.json();
                 console.log('Auth status:', authData);
                 if (!authData.authenticated) {
-                    showMessage('error', 'Please complete GitHub Copilot authorization first. Click the "Start Authorization" button above.');
+                    showMessage('error', 'Please complete GitHub Copilot authorization first. Click the authorization button above.');
                     // Scroll to auth section
                     document.getElementById('authSection')?.scrollIntoView({ behavior: 'smooth' });
                     return;
@@ -710,7 +710,7 @@
 
                 // Get filename from Content-Disposition header or generate from original
                 const contentDisposition = response.headers.get('Content-Disposition');
-                let downloadName = 'audit_answered.docx';
+                let downloadName = 'questionnaire_answered.docx';
 
                 // First try to get from Content-Disposition header
                 if (contentDisposition) {

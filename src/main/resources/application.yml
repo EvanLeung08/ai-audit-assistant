@@ -1,6 +1,6 @@
 spring:
   application:
-    name: evan-ai-audit-assistant
+    name: evan-ai-questionnaire-assistant
   servlet:
     multipart:
       max-file-size: 50MB
@@ -46,7 +46,7 @@ copilot:
     # OpenAI intent header value
     openai-intent: conversation-panel
     # User agent for API requests
-    user-agent: evan-ai-audit-assistant/1.0.0
+    user-agent: evan-ai-questionnaire-assistant/1.0.0
     # Client version header value
     client-version: "1.0.0"
   # Proxy configuration for accessing GitHub API
@@ -58,7 +58,7 @@ copilot:
     # Proxy type: HTTP or SOCKS (default: HTTP)
     type: HTTP
 
-# Audit Assistant Configuration
+# Questionnaire Assistant Configuration
 audit:
   # Enable multi-agent collaboration mode (default: false uses traditional service-based processing)
   # When true, uses AI-powered document analysis with DocumentAnalyzerAgent, AnswerGeneratorAgent, and DocumentWriterAgent

@@ -1,5 +1,5 @@
 ---
-title: Evan AI Audit Assistant - Complete System Architecture
+title: AI Questionnaire Assistant - Complete System Architecture
 ---
 flowchart TB
 subgraph External["🌐 External Systems"]

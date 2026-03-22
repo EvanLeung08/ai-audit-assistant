@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# AI Audit Assistant - Start Script
+# AI Questionnaire Assistant - Start Script
 # This script starts the Spring Boot application
 
-echo "🚀 Starting AI Audit Assistant..."
-echo "================================"
+echo "🚀 Starting AI Questionnaire Assistant..."
+echo "========================================="
 
 # Check if Maven wrapper exists
 if [ -f "./mvnw" ]; then

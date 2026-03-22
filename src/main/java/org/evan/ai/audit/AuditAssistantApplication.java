@@ -7,11 +7,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 /**
- * AI Audit Assistant Application
- *
- * This application allows users to upload Word documents containing audit questions,
- * automatically answers them using RAG (Retrieval-Augmented Generation) from a knowledge base,
- * and returns the completed document.
+ * AI Questionnaire Assistant Application
+ * This application allows users to upload Word and Excel documents containing questionnaire questions,
+ * automatically answer them using RAG (Retrieval-Augmented Generation) from a knowledge base,
+ * and return the completed document.
  */
 @SpringBootApplication(exclude = {
         OpenAiChatAutoConfiguration.class,
