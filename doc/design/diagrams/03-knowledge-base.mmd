@@ -1,0 +1,36 @@
+flowchart LR
+    subgraph Input["📥 Sources"]
+        Web["🖥️ Portal Upload"]
+        AIPFeed["🔄 AIP Auto-Ingest"]
+        APIFeed["🔌 API Upload"]
+    end
+
+    subgraph Pipeline["⚙️ Ingestion"]
+        Validate["Validate Format"]
+        Split["Chunk & Split"]
+        Embed["Generate Embeddings"]
+        Index["Index & Store"]
+    end
+
+    subgraph Store["💾 Storage"]
+        Files["Original Files\n(S3 / NFS)"]
+        Vectors["Vector Index\n(pgvector)"]
+        Meta["Metadata &\nVersion Registry"]
+    end
+
+    subgraph Use["📤 Consumers"]
+        AI["🧠 AI Engine\n(Similarity Search)"]
+        Admin["🖥️ Admin Portal"]
+        Report["📊 Reports\n(Coverage & Gaps)"]
+    end
+
+    Web --> Validate
+    AIPFeed --> Validate
+    APIFeed --> Validate
+    Validate --> Split --> Embed --> Index
+    Index --> Vectors
+    Index --> Meta
+    Validate --> Files
+    Vectors --> AI
+    Meta --> Admin
+    AI -->|"Source logs"| Report

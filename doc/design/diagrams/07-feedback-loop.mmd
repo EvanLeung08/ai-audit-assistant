@@ -1,0 +1,48 @@
+sequenceDiagram
+    autonumber
+    participant Engine as 🧠 AI Engine
+    participant AIP as 🔄 AMG Integration Platform
+    participant Reviewer as 👤 Reviewer
+    participant FeedbackDB as 📊 Feedback Store
+    participant KB as 📚 Knowledge Base
+    participant LLM as ☁️ LLM API
+
+    rect rgb(232, 234, 246)
+        Note over Engine,Reviewer: 1. AI Generates Draft
+        Engine->>AIP: Completed document + confidence scores
+        AIP->>Reviewer: Route for review (with draft + sources)
+    end
+
+    rect rgb(255, 243, 224)
+        Note over Reviewer,FeedbackDB: 2. Reviewer Provides Feedback
+        Reviewer->>Reviewer: Review each answer
+        alt Accept answer
+            Reviewer->>AIP: Accept (no changes)
+            AIP->>FeedbackDB: Log: ACCEPTED {questionId, confidence}
+        else Edit answer
+            Reviewer->>AIP: Submit corrected answer
+            AIP->>FeedbackDB: Log: EDITED {questionId, original, corrected}
+        else Reject answer
+            Reviewer->>AIP: Reject with reason
+            AIP->>FeedbackDB: Log: REJECTED {questionId, reason}
+        end
+    end
+
+    rect rgb(200, 230, 201)
+        Note over AIP,AIP: 3. Finalize & Deliver
+        AIP->>AIP: Merge reviewer decisions into final document
+        AIP->>AIP: Deliver finalized document to client
+    end
+
+    rect rgb(252, 228, 236)
+        Note over FeedbackDB,KB: 4. Continuous Improvement
+        FeedbackDB->>FeedbackDB: Aggregate feedback metrics
+        alt Repeated corrections detected
+            FeedbackDB->>KB: Flag knowledge gap
+            Note over KB: Admin reviews gap report
+        end
+        alt High-quality corrections available
+            FeedbackDB->>KB: Suggest new KB entries
+            KB->>LLM: Re-embed updated content
+        end
+    end

@@ -1,0 +1,68 @@
+flowchart TB
+    subgraph Triggers["🔔 Update Triggers"]
+        Scheduled["⏰ Scheduled Scan\n(Daily / Weekly)"]
+        Feedback["📊 Feedback-Driven\n(Gap detection)"]
+        AIPIngest["🔄 AIP Auto-Ingest\n(New file detected)"]
+        Manual["👤 Admin Upload\n(Manual trigger)"]
+    end
+
+    subgraph Detection["🔍 Change Detection"]
+        FolderWatch["Watched Folder Scanner\n(S3 / NFS / SharePoint)"]
+        HashCheck["File Hash Comparator\n(Detect modified files)"]
+        VersionCheck["Version Registry Check\n(New version available?)"]
+        GapAnalyzer["Knowledge Gap Analyzer\n(From feedback data)"]
+    end
+
+    subgraph Pipeline["⚙️ Update Pipeline"]
+        Validate["Validate & Classify"]
+        Diff["Diff Against Existing\n(New / Updated / Deleted)"]
+        Decision{"Update\nType?"}
+    end
+
+    subgraph NewDoc["📄 New Document"]
+        Split1["Chunk & Split"]
+        Embed1["Generate Embeddings"]
+        Index1["Add to Vector Store"]
+        Meta1["Register in Metadata"]
+    end
+
+    subgraph UpdateDoc["📝 Updated Document"]
+        Invalidate["Invalidate old embeddings"]
+        Split2["Re-chunk document"]
+        Embed2["Re-generate embeddings"]
+        Index2["Replace in Vector Store"]
+        Meta2["Update version & timestamp"]
+    end
+
+    subgraph DeleteDoc["🗑️ Removed Document"]
+        Remove["Remove from Vector Store"]
+        Orphan["Check orphan references"]
+        Meta3["Mark as archived"]
+    end
+
+    subgraph PostUpdate["✅ Post-Update"]
+        Notify["Notify admins"]
+        Stats["Update KB statistics"]
+        Verify["Verify search quality\n(Sample queries)"]
+        Log["Audit log entry"]
+    end
+
+    Scheduled --> FolderWatch
+    Feedback --> GapAnalyzer
+    AIPIngest --> FolderWatch
+    Manual --> Validate
+
+    FolderWatch --> HashCheck
+    HashCheck --> VersionCheck
+    GapAnalyzer --> Validate
+    VersionCheck --> Validate
+
+    Validate --> Diff --> Decision
+    Decision -->|"New"| Split1 --> Embed1 --> Index1 --> Meta1
+    Decision -->|"Updated"| Invalidate --> Split2 --> Embed2 --> Index2 --> Meta2
+    Decision -->|"Deleted"| Remove --> Orphan --> Meta3
+
+    Meta1 --> Notify
+    Meta2 --> Notify
+    Meta3 --> Notify
+    Notify --> Stats --> Verify --> Log

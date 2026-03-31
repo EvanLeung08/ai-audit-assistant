@@ -1,0 +1,1031 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AMG Intelligent Document Platform — Architecture Overview</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+      :root {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --border: #334155;
+        --accent: #3b82f6;
+        --accent2: #8b5cf6;
+        --accent3: #06b6d4;
+        --text: #f1f5f9;
+        --text-muted: #94a3b8;
+        --gradient-1: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        --gradient-2: linear-gradient(135deg, #06b6d4, #3b82f6);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+      }
+
+      .hero {
+        text-align: center;
+        padding: 80px 40px 60px;
+        background: linear-gradient(180deg, #1a1a3e 0%, var(--bg) 100%);
+        position: relative;
+        overflow: hidden;
+      }
+      .hero::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background:
+          radial-gradient(
+            circle at 30% 50%,
+            rgba(59, 130, 246, 0.08) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 70% 50%,
+            rgba(139, 92, 246, 0.06) 0%,
+            transparent 50%
+          );
+        animation: drift 20s ease-in-out infinite;
+      }
+      @keyframes drift {
+        0%,
+        100% {
+          transform: translate(0, 0);
+        }
+        50% {
+          transform: translate(-2%, 1%);
+        }
+      }
+      .hero h1 {
+        font-size: 3rem;
+        font-weight: 700;
+        background: var(--gradient-1);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        position: relative;
+        margin-bottom: 12px;
+      }
+      .hero .subtitle {
+        font-size: 1.25rem;
+        color: var(--text-muted);
+        font-weight: 300;
+        position: relative;
+        max-width: 700px;
+        margin: 0 auto;
+      }
+      .hero .badge {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 6px 18px;
+        border-radius: 100px;
+        background: rgba(59, 130, 246, 0.12);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        color: var(--accent);
+        font-size: 0.85rem;
+        font-weight: 500;
+        position: relative;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 32px;
+      }
+
+      .section {
+        margin: 60px 0;
+        page-break-inside: avoid;
+      }
+      .section-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 24px;
+      }
+      .section-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: var(--gradient-1);
+        font-size: 0.9rem;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+      .section-title {
+        font-size: 1.6rem;
+        font-weight: 600;
+      }
+      .section-desc {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        margin-bottom: 24px;
+        max-width: 800px;
+      }
+
+      .diagram-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 40px;
+        overflow-x: auto;
+      }
+      .diagram-card .mermaid {
+        display: flex;
+        justify-content: center;
+      }
+      .diagram-card svg {
+        max-width: 100%;
+        height: auto;
+      }
+
+      /* Value prop cards */
+      .value-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+      }
+      .value-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 28px 24px;
+        transition:
+          border-color 0.3s,
+          transform 0.3s;
+      }
+      .value-card:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+      }
+      .value-card .icon {
+        font-size: 1.8rem;
+        margin-bottom: 12px;
+      }
+      .value-card h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+      .value-card p {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        line-height: 1.5;
+      }
+
+      /* Pitch banner */
+      .pitch {
+        text-align: center;
+        margin: 80px 0;
+        padding: 60px 40px;
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.08),
+          rgba(139, 92, 246, 0.08)
+        );
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 20px;
+      }
+      .pitch blockquote {
+        font-size: 1.3rem;
+        font-weight: 400;
+        font-style: italic;
+        color: var(--text);
+        max-width: 900px;
+        margin: 0 auto;
+        line-height: 1.7;
+      }
+      .pitch .label {
+        display: inline-block;
+        margin-bottom: 16px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--accent);
+      }
+
+      /* Roadmap */
+      .roadmap-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        margin-top: 24px;
+      }
+      .phase-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 24px;
+        position: relative;
+        overflow: hidden;
+      }
+      .phase-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+      }
+      .phase-card:nth-child(1)::before {
+        background: var(--gradient-1);
+      }
+      .phase-card:nth-child(2)::before {
+        background: var(--gradient-2);
+      }
+      .phase-card:nth-child(3)::before {
+        background: linear-gradient(135deg, #f59e0b, #ef4444);
+      }
+      .phase-card:nth-child(4)::before {
+        background: linear-gradient(135deg, #10b981, #06b6d4);
+      }
+      .phase-card h4 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+      .phase-card ul {
+        list-style: none;
+        padding: 0;
+      }
+      .phase-card li {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        padding: 4px 0 4px 18px;
+        position: relative;
+      }
+      .phase-card li::before {
+        content: "→";
+        position: absolute;
+        left: 0;
+        color: var(--accent);
+      }
+
+      /* Footer */
+      .footer {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        border-top: 1px solid var(--border);
+        margin-top: 60px;
+      }
+
+      /* Print styles */
+      @media print {
+        body {
+          background: #fff;
+          color: #1a1a1a;
+        }
+        .hero {
+          background: none;
+          padding: 40px 20px;
+        }
+        .hero h1 {
+          -webkit-text-fill-color: #1a1a1a;
+          background: none;
+        }
+        .hero .subtitle,
+        .section-desc,
+        .value-card p,
+        .phase-card li {
+          color: #555;
+        }
+        .diagram-card,
+        .value-card,
+        .phase-card {
+          border-color: #ddd;
+          background: #fafafa;
+        }
+        .pitch {
+          background: #f5f5f5;
+          border-color: #ddd;
+        }
+        .section {
+          page-break-inside: avoid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ============ HERO ============ -->
+    <div class="hero">
+      <div class="badge">Architecture Overview — Investor Edition</div>
+      <h1>AMG Intelligent Document Platform</h1>
+      <p class="subtitle">
+        From File Integration to File Intelligence — combining AIP's enterprise
+        connectivity with AI-powered document understanding and traceable
+        response generation.
+      </p>
+    </div>
+
+    <div class="container">
+      <!-- ============ VALUE PROPS ============ -->
+      <div class="section">
+        <div class="value-grid">
+          <div class="value-card">
+            <div class="icon">🔄</div>
+            <h3>AIP Integration</h3>
+            <p>
+              Enterprise file routing across Email, SFTP, API, and ECM systems —
+              the proven foundation.
+            </p>
+          </div>
+          <div class="value-card">
+            <div class="icon">🧠</div>
+            <h3>AI Engine</h3>
+            <p>
+              Multi-agent AI that reads documents, retrieves knowledge, and
+              generates defensible answers.
+            </p>
+          </div>
+          <div class="value-card">
+            <div class="icon">📚</div>
+            <h3>Centralized Knowledge</h3>
+            <p>
+              Shared, searchable knowledge base with persistent embeddings and
+              version tracking.
+            </p>
+          </div>
+          <div class="value-card">
+            <div class="icon">🔍</div>
+            <h3>Full Traceability</h3>
+            <p>
+              Every answer links back to source documents — built for compliance
+              and review.
+            </p>
+          </div>
+          <div class="value-card">
+            <div class="icon">⚡</div>
+            <h3>End-to-End Automation</h3>
+            <p>
+              From inbound file to completed response — zero manual handoff
+              required.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ DIAGRAM 1: Platform Architecture ============ -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-number">1</div>
+          <div class="section-title">Integrated Platform Architecture</div>
+        </div>
+        <p class="section-desc">
+          AIP handles multi-channel file ingestion and delivery. The AI Engine
+          provides intelligent document processing. Both share a centralized
+          knowledge base and monitoring layer.
+        </p>
+        <div class="diagram-card">
+          <pre class="mermaid">
+flowchart TB
+    subgraph ExternalChannels["🌐 External Channels"]
+        EMAIL["📧 Email\n(SMTP/IMAP)"]
+        SFTP["📁 SFTP/FTP"]
+        API["🔌 REST API\n(Partner Portal)"]
+        PORTAL["🖥️ Web Portal"]
+    end
+
+    subgraph AIP["🔄 AMG Integration Platform"]
+        direction TB
+        subgraph Inbound["Inbound Processing"]
+            ChannelAdapter["Channel Adapters\n(Email, SFTP, API, Portal)"]
+            FileDetector["File Type Detector\n& Validator"]
+            Router["Intelligent Router\n(Rule-based + AI)"]
+        end
+        subgraph FlowEngine["Workflow Engine"]
+            FlowExec["Flow Executor"]
+            RetryMgr["Retry & Error Mgr"]
+        end
+        subgraph Outbound["Outbound Delivery"]
+            OutputRouter["Output Router"]
+            ChannelOut["Delivery Adapters"]
+            AuditLog["Audit Log"]
+        end
+    end
+
+    subgraph AIEngine["🧠 AI Questionnaire Engine"]
+        direction TB
+        subgraph AgentLayer["Multi-Agent Layer"]
+            Orchestrator["🎯 Orchestrator"]
+            DocAnalyzer["📄 Analyzer"]
+            AnswerGen["💡 Generator"]
+            DocWriter["✍️ Writer"]
+        end
+        subgraph AIServices["AI Services"]
+            RAG["RAG Pipeline"]
+            Embedder["Embedding Service"]
+            SourceTrack["Source Tracker"]
+        end
+    end
+
+    subgraph CentralKB["📚 Centralized Knowledge Base"]
+        DocRepo["Document Repository"]
+        VectorDB["Vector Store"]
+        SourceIndex["Traceability Registry"]
+    end
+
+    subgraph LLM["☁️ LLM Provider"]
+        LLMProvider["OpenAI / Azure OpenAI\n(Chat + Embedding)"]
+    end
+
+    EMAIL --> ChannelAdapter
+    SFTP --> ChannelAdapter
+    API --> ChannelAdapter
+    PORTAL --> ChannelAdapter
+    ChannelAdapter --> FileDetector --> Router
+
+    Router -->|"Questionnaire"| FlowExec
+    FlowExec --> Orchestrator
+    Orchestrator --> DocAnalyzer --> AnswerGen --> DocWriter
+
+    AnswerGen --> RAG
+    RAG --> VectorDB
+    RAG --> LLMProvider
+    Embedder --> LLMProvider
+    SourceTrack --> SourceIndex
+
+    DocWriter --> FlowExec
+    FlowExec --> OutputRouter --> ChannelOut
+    ChannelOut --> EMAIL
+    ChannelOut --> SFTP
+    ChannelOut --> AuditLog
+            </pre
+          >
+        </div>
+      </div>
+
+      <!-- ============ DIAGRAM 2: End-to-End Flow ============ -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-number">2</div>
+          <div class="section-title">End-to-End Processing Flow</div>
+        </div>
+        <p class="section-desc">
+          The complete journey from a client sending a questionnaire to
+          receiving a filled, traceable response — fully automated through AIP +
+          AI Engine collaboration.
+        </p>
+        <div class="diagram-card">
+          <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant Client as 👤 Client
+    participant Channel as 📧 Email / SFTP
+    participant AIP as 🔄 AMG Integration Platform
+    participant Engine as 🧠 AI Engine
+    participant Analyzer as 📄 Doc Analyzer
+    participant Generator as 💡 Answer Generator
+    participant KB as 📚 Knowledge Base
+    participant LLM as ☁️ LLM API
+    participant Writer as ✍️ Doc Writer
+
+    rect rgb(227, 242, 253)
+        Note over Client,Channel: 1. Document Arrival
+        Client->>Channel: Send questionnaire (Word / Excel)
+        Channel->>AIP: File received via adapter
+    end
+
+    rect rgb(255, 243, 224)
+        Note over AIP,AIP: 2. AIP Ingestion & Routing
+        AIP->>AIP: Validate file & extract metadata
+        AIP->>AIP: Classify → questionnaire detected
+    end
+
+    rect rgb(232, 234, 246)
+        Note over AIP,Engine: 3. Job Submission
+        AIP->>Engine: POST /api/engine/process
+        Engine-->>AIP: 202 Accepted (jobId)
+    end
+
+    rect rgb(252, 228, 236)
+        Note over Engine,Writer: 4. Multi-Agent AI Processing
+        Engine->>Analyzer: Analyze document structure
+        Analyzer->>LLM: Identify questions (batch)
+        LLM-->>Analyzer: Classified results
+        Analyzer-->>Engine: Questions extracted
+
+        Engine->>Generator: Generate answers
+        loop Each question
+            Generator->>KB: Vector similarity search
+            KB-->>Generator: Relevant passages
+            Generator->>LLM: Generate answer + context
+            LLM-->>Generator: Traceable answer
+        end
+        Generator-->>Engine: All answers ready
+
+        Engine->>Writer: Write answers to document
+        Writer-->>Engine: Completed document
+    end
+
+    rect rgb(200, 230, 201)
+        Note over Engine,Client: 5. Delivery
+        Engine->>AIP: Callback (completed file + report)
+        AIP->>Channel: Deliver via configured channel
+        Channel->>Client: Filled document + source report
+    end
+            </pre
+          >
+        </div>
+      </div>
+
+      <!-- ============ DIAGRAM 3: Knowledge Base ============ -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-number">3</div>
+          <div class="section-title">Centralized Knowledge Base</div>
+        </div>
+        <p class="section-desc">
+          Knowledge flows in from multiple sources — web uploads, AIP
+          auto-ingest, and API — then becomes searchable AI-ready context with
+          full traceability.
+        </p>
+        <div class="diagram-card">
+          <pre class="mermaid">
+flowchart LR
+    subgraph Input["📥 Sources"]
+        Web["🖥️ Portal Upload"]
+        AIPFeed["🔄 AIP Auto-Ingest"]
+        APIFeed["🔌 API Upload"]
+    end
+
+    subgraph Pipeline["⚙️ Ingestion"]
+        Validate["Validate Format"]
+        Split["Chunk & Split"]
+        Embed["Generate Embeddings"]
+        Index["Index & Store"]
+    end
+
+    subgraph Store["💾 Storage"]
+        Files["Original Files\n(S3 / NFS)"]
+        Vectors["Vector Index\n(pgvector)"]
+        Meta["Metadata &\nVersion Registry"]
+    end
+
+    subgraph Use["📤 Consumers"]
+        AI["🧠 AI Engine\n(Similarity Search)"]
+        Admin["🖥️ Admin Portal"]
+        Report["📊 Reports\n(Coverage & Gaps)"]
+    end
+
+    Web --> Validate
+    AIPFeed --> Validate
+    APIFeed --> Validate
+    Validate --> Split --> Embed --> Index
+    Index --> Vectors
+    Index --> Meta
+    Validate --> Files
+    Vectors --> AI
+    Meta --> Admin
+    AI -->|"Source logs"| Report
+            </pre
+          >
+        </div>
+      </div>
+
+      <!-- ============ DIAGRAM 4: AIP Flow Config ============ -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-number">4</div>
+          <div class="section-title">
+            Automated Questionnaire Flow (AIP Side)
+          </div>
+        </div>
+        <p class="section-desc">
+          A configurable AIP flow that handles the full lifecycle — from email
+          trigger to confidence-based routing for auto-send or manual review.
+        </p>
+        <div class="diagram-card">
+          <pre class="mermaid">
+flowchart LR
+    S1["📧 Trigger\nEmail received"]
+    S2["📎 Extract\nDownload & validate"]
+    S3["🧠 Process\nSubmit to AI Engine"]
+    S4{"✅ Confidence\n> threshold?"}
+    S5A["📤 Auto-send\nReply with filled doc"]
+    S5B["👤 Review\nRoute to human"]
+    S6["📊 Archive\nLog & store"]
+
+    S1 --> S2 --> S3 --> S4
+    S4 -->|"High confidence"| S5A
+    S4 -->|"Needs review"| S5B
+    S5A --> S6
+    S5B --> S6
+            </pre
+          >
+        </div>
+      </div>
+
+      <!-- ============ DIAGRAM 5: Deployment ============ -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-number">5</div>
+          <div class="section-title">Production Deployment</div>
+        </div>
+        <p class="section-desc">
+          Scalable, clustered deployment with shared storage, message queues for
+          async processing, and API gateway for security and rate limiting.
+        </p>
+        <div class="diagram-card">
+          <pre class="mermaid">
+flowchart TB
+    subgraph GW["API Gateway"]
+        APIGW["🔒 Gateway\n(Auth, Rate Limit, Routing)"]
+    end
+
+    subgraph AIPCluster["🔄 AIP Cluster"]
+        AIP1["AIP #1"]
+        AIP2["AIP #2"]
+        MQ["Message Queue\n(Kafka / RabbitMQ)"]
+    end
+
+    subgraph AICluster["🧠 AI Engine Cluster"]
+        AI1["Engine #1"]
+        AI2["Engine #2"]
+    end
+
+    subgraph Storage["💾 Shared Storage"]
+        S3["Object Storage"]
+        PGV["Vector DB\n(pgvector)"]
+        PG["Relational DB"]
+        Redis["Redis Cache"]
+    end
+
+    subgraph Ext["☁️ External"]
+        LLM["LLM API\n(OpenAI / Azure)"]
+        Email["Email Service"]
+        SFTP["SFTP Endpoints"]
+    end
+
+    APIGW --> AIP1 & AIP2
+    APIGW --> AI1 & AI2
+    AIP1 & AIP2 --> MQ --> AI1 & AI2
+    AI1 & AI2 --> PGV & S3 & LLM
+    AIP1 --> S3 & PG & Email & SFTP
+    AI1 --> PG & Redis
+            </pre
+          >
+        </div>
+      </div>
+
+      <!-- ============ DIAGRAM 6: Feedback Loop ============ -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-number">6</div>
+          <div class="section-title">
+            User Feedback & Continuous Improvement
+          </div>
+        </div>
+        <p class="section-desc">
+          Reviewers accept, edit, or reject AI-generated answers. Feedback data
+          drives knowledge gap detection and continuous quality improvement.
+        </p>
+        <div class="diagram-card">
+          <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant Engine as 🧠 AI Engine
+    participant AIP as 🔄 AMG Integration Platform
+    participant Reviewer as 👤 Reviewer
+    participant FeedbackDB as 📊 Feedback Store
+    participant KB as 📚 Knowledge Base
+    participant LLM as ☁️ LLM API
+
+    rect rgb(232, 234, 246)
+        Note over Engine,Reviewer: 1. AI Generates Draft
+        Engine->>AIP: Completed document + confidence scores
+        AIP->>Reviewer: Route for review (with draft + sources)
+    end
+
+    rect rgb(255, 243, 224)
+        Note over Reviewer,FeedbackDB: 2. Reviewer Provides Feedback
+        Reviewer->>Reviewer: Review each answer
+        alt Accept answer
+            Reviewer->>AIP: Accept (no changes)
+            AIP->>FeedbackDB: Log: ACCEPTED
+        else Edit answer
+            Reviewer->>AIP: Submit corrected answer
+            AIP->>FeedbackDB: Log: EDITED {original, corrected}
+        else Reject answer
+            Reviewer->>AIP: Reject with reason
+            AIP->>FeedbackDB: Log: REJECTED {reason}
+        end
+    end
+
+    rect rgb(200, 230, 201)
+        Note over AIP,AIP: 3. Finalize & Deliver
+        AIP->>AIP: Merge decisions → deliver final document
+    end
+
+    rect rgb(252, 228, 236)
+        Note over FeedbackDB,KB: 4. Continuous Improvement
+        FeedbackDB->>FeedbackDB: Aggregate feedback metrics
+        alt Repeated corrections detected
+            FeedbackDB->>KB: Flag knowledge gap
+        end
+        alt Quality corrections available
+            FeedbackDB->>KB: Suggest new KB entries
+            KB->>LLM: Re-embed updated content
+        end
+    end
+          </pre>
+        </div>
+      </div>
+
+      <!-- ============ DIAGRAM 7: Review & Approval ============ -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-number">7</div>
+          <div class="section-title">Review & Approval Workflow</div>
+        </div>
+        <p class="section-desc">
+          Configurable approval tiers: auto-approve high-confidence answers,
+          single review for medium, escalation for low confidence or sensitive
+          topics.
+        </p>
+        <div class="diagram-card">
+          <pre class="mermaid">
+flowchart TB
+    Result["📥 AI Output\n+ Confidence Scores"]
+    Evaluate["📋 Evaluate Each Answer"]
+    HighConf{"Confidence\n≥ 85%?"}
+    Sensitive{"Sensitive\nTopic?"}
+    MedConf{"Confidence\n≥ 60%?"}
+
+    Auto["✅ Auto-approve"]
+    Assign1["👤 Single Reviewer"]
+    Assign2["👥 Dual Review\n(Escalation)"]
+    Decision1{"Approved?"}
+    Decision2{"Both\napproved?"}
+
+    Finalize["📤 Finalize & Deliver"]
+    Archive["📊 Archive + Audit Trail"]
+    Regen["🔄 Re-generate"]
+    ManualFill["✏️ Manual Answer"]
+
+    Result --> Evaluate --> HighConf
+    HighConf -->|"Yes"| Sensitive
+    Sensitive -->|"No"| Auto --> Finalize
+    Sensitive -->|"Yes"| Assign2
+    HighConf -->|"No"| MedConf
+    MedConf -->|"Yes"| Assign1
+    MedConf -->|"No"| Assign2
+
+    Assign1 --> Decision1
+    Decision1 -->|"Yes"| Finalize
+    Decision1 -->|"No"| Regen
+
+    Assign2 --> Decision2
+    Decision2 -->|"Yes"| Finalize
+    Decision2 -->|"No"| Regen
+
+    Regen --> Evaluate
+    ManualFill --> Finalize
+    Finalize --> Archive
+          </pre>
+        </div>
+      </div>
+
+      <!-- ============ DIAGRAM 8: KB Auto-Update ============ -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-number">8</div>
+          <div class="section-title">Knowledge Base Auto-Update</div>
+        </div>
+        <p class="section-desc">
+          The knowledge base evolves continuously through scheduled scans,
+          feedback-driven gap detection, AIP-ingested documents, and
+          version-controlled content refresh.
+        </p>
+        <div class="diagram-card">
+          <pre class="mermaid">
+flowchart TB
+    subgraph Triggers["🔔 Update Triggers"]
+        Scheduled["⏰ Scheduled Scan"]
+        Feedback["📊 Feedback Gaps"]
+        AIPIngest["🔄 AIP Auto-Ingest"]
+        Manual["👤 Admin Upload"]
+    end
+
+    subgraph Detection["🔍 Change Detection"]
+        FolderWatch["Folder Scanner"]
+        HashCheck["Hash Comparator"]
+        GapAnalyzer["Gap Analyzer"]
+    end
+
+    subgraph Pipeline["⚙️ Update Pipeline"]
+        Validate["Validate"]
+        Diff["Diff Check"]
+        Decision{"Type?"}
+    end
+
+    subgraph Actions["📄 Actions"]
+        NewDoc["New → Chunk, Embed, Index"]
+        UpdateDoc["Updated → Re-embed, Replace"]
+        DeleteDoc["Deleted → Remove, Archive"]
+    end
+
+    subgraph Post["✅ Post-Update"]
+        Notify["Notify Admins"]
+        Verify["Verify Search Quality"]
+        Log["Audit Log"]
+    end
+
+    Scheduled --> FolderWatch
+    Feedback --> GapAnalyzer
+    AIPIngest --> FolderWatch
+    Manual --> Validate
+
+    FolderWatch --> HashCheck --> Validate
+    GapAnalyzer --> Validate
+    Validate --> Diff --> Decision
+
+    Decision -->|"New"| NewDoc
+    Decision -->|"Updated"| UpdateDoc
+    Decision -->|"Deleted"| DeleteDoc
+
+    NewDoc --> Notify
+    UpdateDoc --> Notify
+    DeleteDoc --> Notify
+    Notify --> Verify --> Log
+          </pre>
+        </div>
+      </div>
+
+      <!-- ============ INVESTOR PITCH ============ -->
+      <div class="pitch">
+        <div class="label">Investor Thesis</div>
+        <blockquote>
+          "AIP already routes enterprise files across channels at scale. Now
+          we're adding an AI intelligence layer that <em>understands</em> and
+          <em>responds to</em> those documents — starting with automated
+          questionnaire processing, with contract review and RFP automation
+          next."
+        </blockquote>
+      </div>
+
+      <!-- ============ ROADMAP ============ -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-number">9</div>
+          <div class="section-title">Integration Roadmap</div>
+        </div>
+        <div class="roadmap-grid">
+          <div class="phase-card">
+            <h4>Phase 1 — Foundation</h4>
+            <ul>
+              <li>API contract design & review</li>
+              <li>AI Engine async job API</li>
+              <li>Centralized KB storage layer</li>
+              <li>Basic AIP → AI connector</li>
+            </ul>
+          </div>
+          <div class="phase-card">
+            <h4>Phase 2 — Core Integration</h4>
+            <ul>
+              <li>AIP inbound channel adapters</li>
+              <li>Callback & output delivery</li>
+              <li>Confidence-based routing</li>
+              <li>KB auto-ingest from AIP</li>
+            </ul>
+          </div>
+          <div class="phase-card">
+            <h4>Phase 3 — Hardening</h4>
+            <ul>
+              <li>Retry, timeout, error handling</li>
+              <li>Monitoring dashboard</li>
+              <li>Load testing & tuning</li>
+              <li>Security review & audit</li>
+            </ul>
+          </div>
+          <div class="phase-card">
+            <h4>Phase 4 — Go Live</h4>
+            <ul>
+              <li>UAT with real questionnaires</li>
+              <li>Pilot rollout (1–2 clients)</li>
+              <li>Measure KPIs & iterate</li>
+              <li>Production GA</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ PRODUCT LAYERS ============ -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-number">10</div>
+          <div class="section-title">Product Layer Model</div>
+        </div>
+        <p class="section-desc">
+          The platform evolves from file integration (today) to file
+          intelligence (next) — with questionnaire automation as the first
+          AI-powered product.
+        </p>
+        <div class="diagram-card">
+          <pre class="mermaid">
+block-beta
+    columns 1
+    block:top["🚀 AI-Powered Products"]
+        A["Questionnaire\nAuto-Response"] B["Contract\nReview"] C["RFP\nAutomation"] D["Compliance\nChecks"]
+    end
+    block:mid["🧠 AI Intelligence Layer"]
+        E["Multi-Agent\nOrchestration"] F["RAG\nPipeline"] G["Knowledge\nBase"] H["Source\nTraceability"]
+    end
+    block:base["🔄 AMG Integration Platform"]
+        I["Channel\nAdapters"] J["Workflow\nEngine"] K["File\nRouting"] L["Audit\nLogging"]
+    end
+
+    top --> mid --> base
+            </pre
+          >
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      AMG Intelligent Document Platform — Architecture Overview<br />
+      Confidential — For Investor Review Only
+    </div>
+
+    <script>
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "dark",
+        themeVariables: {
+          primaryColor: "#3b82f6",
+          primaryTextColor: "#f1f5f9",
+          primaryBorderColor: "#475569",
+          lineColor: "#64748b",
+          secondaryColor: "#1e293b",
+          tertiaryColor: "#0f172a",
+          background: "#1e293b",
+          mainBkg: "#1e293b",
+          nodeBorder: "#475569",
+          clusterBkg: "rgba(30,41,59,0.8)",
+          clusterBorder: "#475569",
+          titleColor: "#f1f5f9",
+          edgeLabelBackground: "#1e293b",
+          actorBkg: "#1e293b",
+          actorBorder: "#3b82f6",
+          actorTextColor: "#f1f5f9",
+          actorLineColor: "#64748b",
+          noteBkgColor: "#334155",
+          noteTextColor: "#f1f5f9",
+          noteBorderColor: "#475569",
+          activationBkgColor: "#334155",
+          activationBorderColor: "#3b82f6",
+          loopTextColor: "#94a3b8",
+          signalColor: "#64748b",
+          signalTextColor: "#f1f5f9",
+          labelBoxBkgColor: "#1e293b",
+          labelBoxBorderColor: "#475569",
+          labelTextColor: "#f1f5f9",
+          fontSize: "14px",
+          sectionBkgColor: "#1e293b",
+          altSectionBkgColor: "#0f172a",
+        },
+        flowchart: {
+          curve: "basis",
+          padding: 20,
+          htmlLabels: true,
+          useMaxWidth: true,
+        },
+        sequence: {
+          useMaxWidth: true,
+          actorMargin: 60,
+          messageMargin: 40,
+          mirrorActors: false,
+          bottomMarginAdj: 10,
+          showSequenceNumbers: true,
+        },
+        block: {
+          useMaxWidth: true,
+          padding: 16,
+        },
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,72 @@
+flowchart TB
+    subgraph ExternalChannels["🌐 External Channels"]
+        EMAIL["📧 Email\n(SMTP/IMAP)"]
+        SFTP["📁 SFTP/FTP"]
+        API["🔌 REST API\n(Partner Portal)"]
+        PORTAL["🖥️ Web Portal"]
+    end
+
+    subgraph AIP["🔄 AMG Integration Platform"]
+        direction TB
+        subgraph Inbound["Inbound Processing"]
+            ChannelAdapter["Channel Adapters\n(Email, SFTP, API, Portal)"]
+            FileDetector["File Type Detector\n& Validator"]
+            Router["Intelligent Router\n(Rule-based + AI)"]
+        end
+        subgraph FlowEngine["Workflow Engine"]
+            FlowExec["Flow Executor"]
+            RetryMgr["Retry & Error Mgr"]
+        end
+        subgraph Outbound["Outbound Delivery"]
+            OutputRouter["Output Router"]
+            ChannelOut["Delivery Adapters"]
+            AuditLog["Audit Log"]
+        end
+    end
+
+    subgraph AIEngine["🧠 AI Questionnaire Engine"]
+        direction TB
+        subgraph AgentLayer["Multi-Agent Layer"]
+            Orchestrator["🎯 Orchestrator"]
+            DocAnalyzer["📄 Analyzer"]
+            AnswerGen["💡 Generator"]
+            DocWriter["✍️ Writer"]
+        end
+        subgraph AIServices["AI Services"]
+            RAG["RAG Pipeline"]
+            Embedder["Embedding Service"]
+            SourceTrack["Source Tracker"]
+        end
+    end
+
+    subgraph CentralKB["📚 Centralized Knowledge Base"]
+        DocRepo["Document Repository"]
+        VectorDB["Vector Store"]
+        SourceIndex["Traceability Registry"]
+    end
+
+    subgraph LLM["☁️ LLM Provider"]
+        LLMProvider["OpenAI / Azure OpenAI\n(Chat + Embedding)"]
+    end
+
+    EMAIL --> ChannelAdapter
+    SFTP --> ChannelAdapter
+    API --> ChannelAdapter
+    PORTAL --> ChannelAdapter
+    ChannelAdapter --> FileDetector --> Router
+
+    Router -->|"Questionnaire"| FlowExec
+    FlowExec --> Orchestrator
+    Orchestrator --> DocAnalyzer --> AnswerGen --> DocWriter
+
+    AnswerGen --> RAG
+    RAG --> VectorDB
+    RAG --> LLMProvider
+    Embedder --> LLMProvider
+    SourceTrack --> SourceIndex
+
+    DocWriter --> FlowExec
+    FlowExec --> OutputRouter --> ChannelOut
+    ChannelOut --> EMAIL
+    ChannelOut --> SFTP
+    ChannelOut --> AuditLog

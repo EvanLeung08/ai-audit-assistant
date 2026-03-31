@@ -1,0 +1,35 @@
+flowchart TB
+    subgraph GW["API Gateway"]
+        APIGW["🔒 Gateway\n(Auth, Rate Limit, Routing)"]
+    end
+
+    subgraph AIPCluster["🔄 AIP Cluster"]
+        AIP1["AIP #1"]
+        AIP2["AIP #2"]
+        MQ["Message Queue\n(Kafka / RabbitMQ)"]
+    end
+
+    subgraph AICluster["🧠 AI Engine Cluster"]
+        AI1["Engine #1"]
+        AI2["Engine #2"]
+    end
+
+    subgraph Storage["💾 Shared Storage"]
+        S3["Object Storage"]
+        PGV["Vector DB\n(pgvector)"]
+        PG["Relational DB"]
+        Redis["Redis Cache"]
+    end
+
+    subgraph Ext["☁️ External"]
+        LLM["LLM API\n(OpenAI / Azure)"]
+        Email["Email Service"]
+        SFTP["SFTP Endpoints"]
+    end
+
+    APIGW --> AIP1 & AIP2
+    APIGW --> AI1 & AI2
+    AIP1 & AIP2 --> MQ --> AI1 & AI2
+    AI1 & AI2 --> PGV & S3 & LLM
+    AIP1 --> S3 & PG & Email & SFTP
+    AI1 --> PG & Redis

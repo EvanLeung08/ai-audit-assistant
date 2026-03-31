@@ -1,0 +1,63 @@
+flowchart TB
+    subgraph Input["📥 AI Engine Output"]
+        Result["Completed Document\n+ Confidence Scores\n+ Source References"]
+    end
+
+    subgraph Policy["📋 Approval Policy Engine"]
+        Evaluate["Evaluate Each Answer"]
+        HighConf{"Confidence\n≥ 85%?"}
+        MedConf{"Confidence\n≥ 60%?"}
+        Sensitive{"Sensitive\nTopic?"}
+    end
+
+    subgraph AutoApprove["✅ Auto-Approve Path"]
+        Auto["Auto-approve\n& mark as AI-generated"]
+        AutoLog["Log: auto-approved\n(auditable)"]
+    end
+
+    subgraph SingleReview["👤 Single Review Path"]
+        Assign1["Assign to primary reviewer"]
+        Review1["Reviewer: Accept / Edit / Reject"]
+        Decision1{"Approved?"}
+    end
+
+    subgraph EscalationReview["👥 Escalation Path"]
+        Assign2["Assign to senior reviewer\n+ domain expert"]
+        Review2["Dual review required"]
+        Decision2{"Both approved?"}
+    end
+
+    subgraph Output["📤 Final Output"]
+        Finalize["Merge approved answers"]
+        Deliver["Deliver to client\nvia AIP channel"]
+        Archive["Archive with\naudit trail"]
+    end
+
+    subgraph Rejected["🔄 Re-process"]
+        Regen["Re-generate with\nadditional context"]
+        ManualFill["Manual answer\nby reviewer"]
+    end
+
+    Result --> Evaluate --> HighConf
+    HighConf -->|"Yes"| Sensitive
+    Sensitive -->|"No"| Auto --> AutoLog --> Finalize
+    Sensitive -->|"Yes"| Assign2
+    HighConf -->|"No"| MedConf
+    MedConf -->|"Yes"| Assign1
+    MedConf -->|"No"| Assign2
+
+    Assign1 --> Review1 --> Decision1
+    Decision1 -->|"Yes"| Finalize
+    Decision1 -->|"No"| Rejected
+
+    Assign2 --> Review2 --> Decision2
+    Decision2 -->|"Yes"| Finalize
+    Decision2 -->|"No"| Rejected
+
+    Regen --> Evaluate
+    ManualFill --> Finalize
+
+    Finalize --> Deliver --> Archive
+
+    Rejected --> Regen
+    Rejected --> ManualFill

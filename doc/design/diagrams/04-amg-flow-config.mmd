@@ -1,0 +1,14 @@
+flowchart LR
+    S1["📧 Trigger\nEmail received"]
+    S2["📎 Extract\nDownload & validate"]
+    S3["🧠 Process\nSubmit to AI Engine"]
+    S4{"✅ Confidence\n> threshold?"}
+    S5A["📤 Auto-send\nReply with filled doc"]
+    S5B["👤 Review\nRoute to human"]
+    S6["📊 Archive\nLog & store"]
+
+    S1 --> S2 --> S3 --> S4
+    S4 -->|"High confidence"| S5A
+    S4 -->|"Needs review"| S5B
+    S5A --> S6
+    S5B --> S6

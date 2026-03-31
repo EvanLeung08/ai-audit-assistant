@@ -1,0 +1,124 @@
+sequenceDiagram
+    autonumber
+    participant Client as 👤 Client
+    participant Channel as 📧 Email / SFTP
+    participant AIP as 🔄 AMG Integration Platform
+    participant Engine as 🧠 AI Engine
+    participant Analyzer as 📄 Doc Analyzer
+    participant Generator as 💡 Answer Generator
+    participant KB as 📚 Knowledge Base
+    participant LLM as ☁️ LLM API
+    participant Writer as ✍️ Doc Writer
+    participant Policy as 📋 Approval Policy
+    participant Reviewer as 👤 Reviewer
+    participant FeedbackDB as 📊 Feedback Store
+
+    %% ───── Stage 1: Document Arrival ─────
+    rect rgb(227, 242, 253)
+        Note over Client,Channel: 1. Document Arrival
+        Client->>Channel: Send questionnaire (Word / Excel)
+        Channel->>AIP: File received via adapter
+    end
+
+    %% ───── Stage 2: AIP Ingestion ─────
+    rect rgb(255, 243, 224)
+        Note over AIP,AIP: 2. AIP Ingestion & Routing
+        AIP->>AIP: Validate file & extract metadata
+        AIP->>AIP: Classify → questionnaire detected
+    end
+
+    %% ───── Stage 3: Job Submission ─────
+    rect rgb(232, 234, 246)
+        Note over AIP,Engine: 3. Job Submission
+        AIP->>Engine: POST /api/engine/process
+        Engine-->>AIP: 202 Accepted (jobId)
+    end
+
+    %% ───── Stage 4: Multi-Agent AI Processing ─────
+    rect rgb(252, 228, 236)
+        Note over Engine,Writer: 4. Multi-Agent AI Processing
+        Engine->>Analyzer: Analyze document structure
+        Analyzer->>LLM: Identify questions (batch)
+        LLM-->>Analyzer: Classified results
+        Analyzer-->>Engine: Questions extracted
+
+        Engine->>Generator: Generate answers
+        loop Each question
+            Generator->>KB: Vector similarity search
+            KB-->>Generator: Relevant passages + sources
+            Generator->>LLM: Generate answer + context
+            LLM-->>Generator: Traceable answer + confidence
+        end
+        Generator-->>Engine: All answers + confidence scores
+
+        Engine->>Writer: Write answers to document
+        Writer-->>Engine: Completed document + source report
+    end
+
+    %% ───── Stage 5: Confidence-Based Review Routing ─────
+    rect rgb(255, 253, 231)
+        Note over Engine,Reviewer: 5. Approval Routing (Confidence-Based)
+        Engine->>AIP: Callback (completed file + confidence scores)
+        AIP->>Policy: Evaluate each answer's confidence
+
+        alt All answers ≥ 85% & non-sensitive
+            Policy-->>AIP: AUTO-APPROVE
+            AIP->>AIP: Mark as AI-generated (auditable)
+        else Any answer 60%–85%
+            Policy-->>AIP: SINGLE REVIEW
+            AIP->>Reviewer: Assign to primary reviewer
+        else Any answer < 60% or sensitive topic
+            Policy-->>AIP: ESCALATION
+            AIP->>Reviewer: Assign to senior reviewer + domain expert
+        end
+    end
+
+    %% ───── Stage 6: Human Review & Feedback ─────
+    rect rgb(255, 243, 224)
+        Note over Reviewer,FeedbackDB: 6. Human Review & Feedback Collection
+        Reviewer->>Reviewer: Review each flagged answer (with sources)
+
+        alt Accept answer
+            Reviewer->>AIP: Accept (no changes)
+            AIP->>FeedbackDB: Log: ACCEPTED {questionId, confidence}
+        else Edit answer
+            Reviewer->>AIP: Submit corrected answer + reason
+            AIP->>FeedbackDB: Log: EDITED {questionId, original, corrected, reason}
+        else Reject answer
+            Reviewer->>AIP: Reject with reason
+            AIP->>FeedbackDB: Log: REJECTED {questionId, reason}
+            AIP->>Engine: Re-generate with additional context
+            Engine-->>AIP: Revised answer
+            AIP->>Reviewer: Re-route for review
+        end
+    end
+
+    %% ───── Stage 7: Finalize & Deliver ─────
+    rect rgb(200, 230, 201)
+        Note over AIP,Client: 7. Finalize & Deliver
+        AIP->>AIP: Merge approved answers into final document
+        AIP->>AIP: Attach audit trail + source report
+        AIP->>Channel: Deliver via configured channel
+        Channel->>Client: Filled document + traceability report
+    end
+
+    %% ───── Stage 8: Continuous Improvement & KB Auto-Update ─────
+    rect rgb(232, 234, 246)
+        Note over FeedbackDB,LLM: 8. Continuous Improvement & KB Auto-Update
+        FeedbackDB->>FeedbackDB: Aggregate feedback metrics
+
+        alt Repeated corrections detected (knowledge gap)
+            FeedbackDB->>KB: Flag knowledge gap → admin review
+        end
+        alt High-quality corrections available
+            FeedbackDB->>KB: Propose new KB entries from edits
+        end
+        alt Scheduled scan / new files detected
+            AIP->>KB: Auto-ingest new documents from watched folders
+        end
+
+        KB->>KB: Validate, chunk & diff against existing
+        KB->>LLM: Generate / refresh embeddings
+        KB->>KB: Update vector store + metadata registry
+        Note over KB: Verify search quality → audit log
+    end
